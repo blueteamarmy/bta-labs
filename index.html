@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Blue Team Army — Terminal Linux interativo com desafios CTF. Pratique comandos sem instalar nada." />
+  <meta name="keywords" content="linux, terminal, blue team, comandos, bash, ctf, capture the flag, cibersegurança" />
+  <meta name="author" content="Blue Team Army" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta property="og:title" content="Blue Team Army — Terminal Linux" />
+  <meta property="og:description" content="Ambiente interativo para aprender comandos Linux com desafios CTF. Sem instalar nada." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <title>Blue Team Army — Terminal Linux</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0a0e1a;
+      --navy-mid:  #0d1525;
+      --navy-lite: #111e38;
+      --border:    #1a2a4a;
+      --border2:   #1a3060;
+      --cyan:      #00e5ff;
+      --blue:      #4a9eff;
+      --green:     #00e5a0;
+      --yellow:    #febc2e;
+      --red:       #ff6b6b;
+      --text:      #c8d8f0;
+      --text-dim:  #a0c4e0;
+      --text-faint:#2a4a7a;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+      gap: 20px;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    .site-header {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo-hex {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 1.5px;
+      line-height: 1.1;
+    }
+
+    .logo-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      color: var(--blue);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-link {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      color: var(--blue);
+      text-decoration: none;
+      letter-spacing: 1px;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 4px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .header-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── Hero ──────────────────────────────────────────────── */
+    .hero {
+      width: 100%;
+      max-width: 860px;
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 2px;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 700;
+      color: #e8f4ff;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .hero-title span { color: var(--cyan); }
+
+    .hero-desc {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Stats bar ─────────────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .stat-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Terminal ──────────────────────────────────────────── */
+    .terminal-wrap {
+      width: 100%;
+      max-width: 860px;
+      position: relative;
+    }
+
+    .terminal {
+      background: var(--navy);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 40px rgba(0, 229, 255, 0.05);
+    }
+
+    /* titlebar */
+    .titlebar {
+      background: var(--navy-mid);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tb-left { display: flex; align-items: center; gap: 10px; }
+
+    .dots { display: flex; gap: 6px; }
+    .dot-btn { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .dot-btn.r { background: #ff5f57; }
+    .dot-btn.y { background: #febc2e; }
+    .dot-btn.g { background: #28c840; }
+
+    .tb-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 12px;
+      color: var(--blue);
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .score-display {
+      font-size: 12px;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .score-display .val { color: var(--cyan); font-weight: 600; }
+
+    .flags-display {
+      font-size: 12px;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .flags-display .val { color: var(--yellow); font-weight: 600; }
+
+    /* output */
+    .output {
+      padding: 16px;
+      overflow-y: auto;
+      height: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) var(--navy);
+    }
+
+    .output::-webkit-scrollbar { width: 6px; }
+    .output::-webkit-scrollbar-track { background: var(--navy); }
+    .output::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .line {
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .line.cmd  { color: var(--cyan); }
+    .line.out  { color: var(--text-dim); }
+    .line.err  { color: var(--red); }
+    .line.suc  { color: var(--green); }
+    .line.hint { color: var(--yellow); }
+    .line.sys  { color: var(--blue); }
+    .line.flag { color: var(--cyan); font-weight: 600; }
+
+    /* input bar */
+    .inputbar {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--navy-mid);
+      gap: 8px;
+    }
+
+    .prompt {
+      font-size: 13px;
+      color: var(--blue);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .prompt .cwd-part { color: var(--cyan); }
+
+    .cmd-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #e0eeff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      caret-color: var(--cyan);
+      min-width: 0;
+    }
+    .cmd-input::placeholder { color: var(--text-faint); }
+
+    /* hint chips */
+    .chips-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #080c18;
+      border-top: 1px solid #111e38;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      font-size: 11px;
+      font-family: 'Share Tech Mono', monospace;
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: #0d1e3a;
+      color: var(--blue);
+      border: 1px solid var(--border2);
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
+    }
+    .chip:hover { background: var(--border2); color: var(--cyan); }
+
+    /* ── Flag toast ────────────────────────────────────────── */
+    .flag-toast {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #0b1d3a;
+      border: 2px solid var(--cyan);
+      border-radius: 10px;
+      padding: 28px 36px;
+      text-align: center;
+      z-index: 20;
+      pointer-events: none;
+      min-width: 220px;
+    }
+    .flag-toast.show {
+      display: block;
+      animation: popin 0.28s ease;
+    }
+    @keyframes popin {
+      from { transform: translate(-50%,-50%) scale(0.82); opacity: 0; }
+      to   { transform: translate(-50%,-50%) scale(1);    opacity: 1; }
+    }
+    .ft-label { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+    .ft-pts   { font-family: 'Exo 2', sans-serif; font-size: 32px; color: var(--cyan); font-weight: 700; margin: 6px 0; }
+    .ft-msg   { font-size: 12px; color: var(--green); }
+
+    /* ── Victory banner ────────────────────────────────────── */
+    .victory {
+      display: none;
+      width: 100%;
+      max-width: 860px;
+      background: var(--navy-mid);
+      border: 1px solid var(--cyan);
+      border-radius: 10px;
+      padding: 28px 32px;
+      text-align: center;
+    }
+    .victory.show { display: block; animation: fadein 0.4s ease; }
+    @keyframes fadein { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .victory-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+    .victory-score {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 16px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+    .victory-score span { color: var(--cyan); font-weight: 700; }
+    .victory-btn {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--cyan);
+      background: transparent;
+      border: 1px solid var(--cyan);
+      padding: 10px 28px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .victory-btn:hover { background: rgba(0,229,255,0.08); }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .site-footer {
+      width: 100%;
+      max-width: 860px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .footer-text {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      color: var(--text-faint);
+      letter-spacing: 0.5px;
+    }
+
+    .footer-link {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+      letter-spacing: 0.5px;
+    }
+    .footer-link:hover { color: var(--cyan); }
+
+    /* ── Mobile ────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .output { height: 300px; }
+      .header-link { display: none; }
+      .tb-right { gap: 10px; }
+      .flags-display { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <a class="logo" href="#">
+      <svg class="logo-hex" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+        <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+        <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+      </svg>
+      <div>
+        <div class="logo-text">BLUE TEAM ARMY</div>
+        <div class="logo-sub">Training Lab</div>
+      </div>
+    </a>
+    <a class="header-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army &rarr;</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-tag">Ambiente Interativo</div>
+    <h1 class="hero-title" id="hero-title">Terminal Linux no <span>navegador</span></h1>
+    <p class="hero-desc">Pratique comandos reais e resolva desafios CTF sem instalar nada. Encontre todas as flags e some sua pontuação.</p>
+    <div class="stats-bar" aria-label="Status do laboratório">
+      <div class="stat-pill"><span class="dot" aria-hidden="true"></span> Sistema Online</div>
+      <div class="stat-pill">3 Flags Escondidas</div>
+      <div class="stat-pill">375 pts Disponíveis</div>
+    </div>
+  </section>
+
+  <!-- Terminal -->
+  <main class="terminal-wrap" aria-label="Terminal interativo">
+    <div class="terminal" role="application" aria-label="Emulador de terminal Linux">
+
+      <div class="titlebar">
+        <div class="tb-left">
+          <div class="dots" aria-hidden="true">
+            <div class="dot-btn r"></div>
+            <div class="dot-btn y"></div>
+            <div class="dot-btn g"></div>
+          </div>
+          <div class="tb-title">BLUE TEAM ARMY — TERMINAL LAB</div>
+        </div>
+        <div class="tb-right">
+          <div class="flags-display" aria-live="polite" aria-label="Flags capturadas">
+            <span>Flags:</span>
+            <span class="val" id="flagsDisplay">0 / 3</span>
+          </div>
+          <div class="score-display" aria-live="polite" aria-label="Pontuação atual">
+            <span>Score:</span>
+            <span class="val" id="scoreDisplay">0 pts</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="output" id="output" role="log" aria-label="Saída do terminal" aria-live="polite"></div>
+
+      <div class="inputbar">
+        <div class="prompt" aria-hidden="true">usuario@blueteam:<span class="cwd-part" id="cwdDisplay">~</span>$</div>
+        <input
+          class="cmd-input"
+          id="cmdInput"
+          type="text"
+          placeholder="Digite um comando..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          aria-label="Linha de comando. Digite help para ver os comandos disponíveis."
+        />
+      </div>
+
+      <div class="chips-bar" aria-label="Comandos rápidos">
+        <button class="chip" onclick="fillCmd('help')" type="button">help</button>
+        <button class="chip" onclick="fillCmd('ls')" type="button">ls</button>
+        <button class="chip" onclick="fillCmd('ls -a')" type="button">ls -a</button>
+        <button class="chip" onclick="fillCmd('cat ')" type="button">cat</button>
+        <button class="chip" onclick="fillCmd('cd ')" type="button">cd</button>
+        <button class="chip" onclick="fillCmd('cd ..')" type="button">cd ..</button>
+        <button class="chip" onclick="fillCmd('pwd')" type="button">pwd</button>
+        <button class="chip" onclick="fillCmd('whoami')" type="button">whoami</button>
+        <button class="chip" onclick="fillCmd('clear')" type="button">clear</button>
+      </div>
+    </div>
+
+    <!-- Flag toast -->
+    <div class="flag-toast" id="flagToast" role="status" aria-live="assertive">
+      <div class="ft-label">&#x1F6A9; Flag Capturada!</div>
+      <div class="ft-pts" id="toastPts">+100 pts</div>
+      <div class="ft-msg" id="toastMsg"></div>
+    </div>
+  </main>
+
+  <!-- Victory banner (aparece quando todas as flags são encontradas) -->
+  <div class="victory" id="victoryBanner" role="status" aria-live="polite">
+    <div class="victory-title">&#x1F3C6; Missão Concluída!</div>
+    <p class="victory-score">Você encontrou todas as flags. Pontuação final: <span id="finalScore">0 pts</span></p>
+    <button class="victory-btn" onclick="resetGame()" type="button">Jogar Novamente</button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span class="footer-text">&copy; 2025 Blue Team Army. Todos os direitos reservados.</span>
+    <a class="footer-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army</a>
+  </footer>
+
+</div><!-- .page -->
+
+<script>
+  // ── Filesystem ────────────────────────────────────────────
+  // Representado como árvore. cwd é array de segmentos partindo de ABSTREE.
+  const TREE_HOME = {
+    type: 'dir',
+    children: {
+      'missoes': { type: 'dir', children: {
+        'missao_01.txt': { type: 'file', content: 'MISSÃO 01 — Reconhecimento\n\nSeu primeiro objetivo:\nEncontre o arquivo secreto escondido nesta máquina.\n\nDica: arquivos ocultos começam com ponto (.) — tente  ls -a' },
+        'missao_02.txt': { type: 'file', content: 'MISSÃO 02 — Identificação\n\nVerifique quem você é e quais grupos pertence.\n\nComandos úteis: whoami, id' },
+        'missao_03.txt': { type: 'file', content: 'MISSÃO 03 — Análise de Log\n\nLogs do sistema revelam atividades suspeitas.\nExplore o diretório /var/log.\n\nDica: use  cat  para ler o arquivo de alerta.' }
+      }},
+      'ferramentas': { type: 'dir', children: {
+        'README.txt': { type: 'file', content: 'Ferramentas disponíveis nesta instância:\n\n  nmap     — varredura de rede\n  netstat  — conexões ativas\n  tcpdump  — captura de pacotes\n  grep     — busca em arquivos\n  find     — localizar arquivos\n\nEstude cada uma. Elas serão essenciais no Blue Team.' }
+      }},
+      '.segredo': { type: 'file', content: 'Você encontrou o arquivo oculto!\n\nFLAG{oculto_mas_nao_invisivel}\n\n+100 pontos adicionados à sua conta.' },
+      '.bash_history': { type: 'file', content: 'ls\ncd missoes\ncat missao_01.txt\nsudo su\nnmap -sV 192.168.1.0/24\ncat /etc/passwd\n' }
+    }
+  };
+
+  const ABSTREE = {
+    type: 'dir',
+    children: {
+      'home': { type: 'dir', children: { 'usuario': TREE_HOME } },
+      'etc': { type: 'dir', children: {
+        'passwd': { type: 'file', content: 'root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nusuario:x:1000:1000:Usuario BTA:/home/usuario:/bin/bash\n' },
+        'hostname': { type: 'file', content: 'blueteam-lab\n' },
+        'os-release': { type: 'file', content: 'NAME="Blue Team Army OS"\nVERSION="1.0 (Training Edition)"\nID=bta\n' }
+      }},
+      'var': { type: 'dir', children: {
+        'log': { type: 'dir', children: {
+          'syslog': { type: 'file', content: 'Jun  9 02:14:33 blueteam-lab kernel: System started\nJun  9 02:15:01 blueteam-lab sshd: Accepted publickey for usuario\nJun  9 03:47:22 blueteam-lab sshd: Failed password for root from 192.168.1.99 port 4444\nJun  9 03:47:23 blueteam-lab sshd: Failed password for root from 192.168.1.99 port 4444\nJun  9 03:47:24 blueteam-lab sshd: BREAK-IN ATTEMPT! repeated auth failures\n' },
+          'alerta.log': { type: 'file', content: 'ALERTA DE SEGURANÇA — ACESSO NÃO AUTORIZADO DETECTADO\n\nOrigem:   192.168.1.99\nAlvo:     192.168.1.1:22 (SSH)\nHorário:  03:47:22\nTentativas: 47\n\nFLAG{brute_force_detectado}\n\nInvestigue a origem e documente o incidente.' }
+        }}
+      }},
+      'tmp': { type: 'dir', children: {
+        'evidencia.txt': { type: 'file', content: 'Arquivo temporário criado durante análise forense.\n\nHash MD5: d41d8cd98f00b204e9800998ecf8427e\nFLAG{analise_forense_iniciada}\n' }
+      }}
+    }
+  };
+
+  // ── Path engine ───────────────────────────────────────────
+  const HOME_SEGS = ['home', 'usuario'];
+  let cwd = [...HOME_SEGS];
+
+  function cwdToDisplay() {
+    const h = HOME_SEGS.join('/');
+    const p = cwd.join('/');
+    if (p === h) return '~';
+    if (p.startsWith(h + '/')) return '~/' + p.slice(h.length + 1);
+    return '/' + p;
+  }
+
+  function cwdToReal() {
+    return '/' + cwd.join('/');
+  }
+
+  function resolveSeg(pathStr) {
+    if (!pathStr || pathStr === '~') return [...HOME_SEGS];
+    if (pathStr === '/') return [];
+    let segs;
+    if (pathStr.startsWith('~/')) {
+      segs = [...HOME_SEGS, ...pathStr.slice(2).split('/').filter(Boolean)];
+    } else if (pathStr.startsWith('/')) {
+      segs = pathStr.split('/').filter(Boolean);
+    } else {
+      segs = [...cwd];
+      for (const part of pathStr.split('/').filter(Boolean)) {
+        if (part === '.') continue;
+        if (part === '..') { if (segs.length > 0) segs.pop(); }
+        else segs.push(part);
+      }
+      return segs;
+    }
+    // normaliza .. em paths absolutos
+    const out = [];
+    for (const s of segs) {
+      if (s === '..') { if (out.length > 0) out.pop(); }
+      else if (s !== '.') out.push(s);
+    }
+    return out;
+  }
+
+  function getNode(segs) {
+    let node = ABSTREE;
+    for (const s of segs) {
+      if (!node || node.type !== 'dir') return null;
+      node = (node.children || {})[s];
+    }
+    return node || null;
+  }
+
+  // ── Flags ─────────────────────────────────────────────────
+  const FLAGS = {
+    'FLAG{oculto_mas_nao_invisivel}': { pts: 100, msg: 'Arquivo oculto encontrado!' },
+    'FLAG{brute_force_detectado}':    { pts: 150, msg: 'Log de ataque analisado!' },
+    'FLAG{analise_forense_iniciada}': { pts: 125, msg: 'Evidência forense localizada!' }
+  };
+  const TOTAL_FLAGS = Object.keys(FLAGS).length;
+  let score = 0;
+  const foundFlags = new Set();
+
+  // ── UI helpers ────────────────────────────────────────────
+  const outputEl = document.getElementById('output');
+
+  function print(text, cls) {
+    const d = document.createElement('div');
+    d.className = 'line ' + (cls || 'out');
+    d.textContent = text;
+    outputEl.appendChild(d);
+    outputEl.scrollTop = outputEl.scrollHeight;
+  }
+
+  function updatePrompt() {
+    document.getElementById('cwdDisplay').textContent = cwdToDisplay();
+  }
+
+  function updateScore() {
+    document.getElementById('scoreDisplay').textContent = score + ' pts';
+    document.getElementById('flagsDisplay').textContent = foundFlags.size + ' / ' + TOTAL_FLAGS;
+  }
+
+  function checkFlags(text) {
+    const matches = text.match(/FLAG\{[^}]+\}/g);
+    if (!matches) return;
+    for (const f of matches) {
+      if (FLAGS[f] && !foundFlags.has(f)) {
+        foundFlags.add(f);
+        score += FLAGS[f].pts;
+        updateScore();
+        showFlagToast(FLAGS[f].pts, FLAGS[f].msg);
+        if (foundFlags.size === TOTAL_FLAGS) {
+          setTimeout(showVictory, 2600);
+        }
+      }
+    }
+  }
+
+  function showFlagToast(pts, msg) {
+    const t = document.getElementById('flagToast');
+    document.getElementById('toastPts').textContent = '+' + pts + ' pts';
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2300);
+  }
+
+  function showVictory() {
+    document.getElementById('finalScore').textContent = score + ' pts';
+    document.getElementById('victoryBanner').classList.add('show');
+  }
+
+  function resetGame() {
+    score = 0;
+    foundFlags.clear();
+    cwd = [...HOME_SEGS];
+    updateScore();
+    updatePrompt();
+    outputEl.innerHTML = '';
+    document.getElementById('victoryBanner').classList.remove('show');
+    printBoot();
+    document.getElementById('cmdInput').focus();
+  }
+
+  // ── Comandos ──────────────────────────────────────────────
+  const CMDS = {
+
+    help() {
+      return [
+        ['sys', '╔══════════════════════════════════════════╗'],
+        ['sys', '║   BLUE TEAM ARMY — COMANDOS DISPONÍVEIS  ║'],
+        ['sys', '╚══════════════════════════════════════════╝'],
+        ['out', ''],
+        ['out', '  ls [-a]           listar arquivos do diretório'],
+        ['out', '  cat <arquivo>     exibir conteúdo de um arquivo'],
+        ['out', '  cd <dir>          entrar em um diretório'],
+        ['out', '  cd ..             voltar ao diretório anterior'],
+        ['out', '  cd ~              voltar ao diretório home'],
+        ['out', '  pwd               mostrar caminho atual'],
+        ['out', '  whoami            exibir usuário atual'],
+        ['out', '  id                exibir uid, gid e grupos'],
+        ['out', '  uname [-a]        informações do sistema'],
+        ['out', '  find . -name <p>  buscar arquivos por nome'],
+        ['out', '  grep <pat> <arq>  buscar texto em arquivo'],
+        ['out', '  clear             limpar a tela'],
+        ['out', ''],
+        ['hint', '  Dica: comece lendo ~/missoes/missao_01.txt'],
+      ];
+    },
+
+    ls(args) {
+      const showHidden = args.some(a => a.startsWith('-') && a.includes('a'));
+      const node = getNode(cwd);
+      if (!node || node.type !== 'dir') return [['err', 'ls: não é um diretório']];
+      const entries = Object.entries(node.children || {});
+      const visible = entries.filter(([n]) => showHidden || !n.startsWith('.'));
+      if (!visible.length) return [['out', '(diretório vazio)']];
+      return [['out', visible.map(([n, nd]) => nd.type === 'dir' ? n + '/' : n).join('   ')]];
+    },
+
+    cat(args) {
+      if (!args[0]) return [['err', 'cat: especifique um arquivo']];
+      const segs = resolveSeg(args[0]);
+      const node = getNode(segs);
+      if (!node) return [['err', 'cat: ' + args[0] + ': arquivo não encontrado']];
+      if (node.type === 'dir') return [['err', 'cat: ' + args[0] + ': é um diretório']];
+      checkFlags(node.content);
+      return node.content.split('\n').map(l => ['out', l]);
+    },
+
+    cd(args) {
+      const dest = args[0] !== undefined ? args[0] : '~';
+      const segs = resolveSeg(dest);
+      const node = getNode(segs);
+      if (!node) return [['err', 'bash: cd: ' + dest + ': diretório não encontrado']];
+      if (node.type !== 'dir') return [['err', 'bash: cd: ' + dest + ': não é um diretório']];
+      cwd = segs;
+      updatePrompt();
+      return [];
+    },
+
+    pwd() {
+      return [['out', cwdToReal()]];
+    },
+
+    whoami() { return [['out', 'usuario']]; },
+
+    id() { return [['out', 'uid=1000(usuario) gid=1000(usuario) grupos=1000(usuario),27(sudo),100(users)']]; },
+
+    uname(args) {
+      if (args.includes('-a')) {
+        return [['out', 'Linux blueteam-lab 5.15.0-bta #1 SMP Blue Team Army Training x86_64 GNU/Linux']];
+      }
+      return [['out', 'Linux']];
+    },
+
+    find(args) {
+      const ni = args.indexOf('-name');
+      if (ni < 0 || !args[ni + 1]) return [['out', 'find: uso: find . -name <padrão>']];
+      const pat = args[ni + 1].replace(/\*/g, '').toLowerCase();
+      const results = [];
+      function walk(node, path) {
+        if (!node || node.type !== 'dir') return;
+        for (const [name, child] of Object.entries(node.children || {})) {
+          const p = path + '/' + name;
+          if (name.toLowerCase().includes(pat)) results.push(p);
+          if (child.type === 'dir') walk(child, p);
+        }
+      }
+      walk(getNode(cwd), '.');
+      return results.length ? results.map(r => ['out', r]) : [['out', '(nenhum resultado)']];
+    },
+
+    grep(args) {
+      if (args.length < 2) return [['err', 'grep: uso: grep <padrão> <arquivo>']];
+      const [pat, fname] = args;
+      const segs = resolveSeg(fname);
+      const node = getNode(segs);
+      if (!node) return [['err', 'grep: ' + fname + ': arquivo não encontrado']];
+      if (node.type === 'dir') return [['err', 'grep: ' + fname + ': é um diretório']];
+      const matches = node.content.split('\n').filter(l => l.toLowerCase().includes(pat.toLowerCase()));
+      if (!matches.length) return [['out', '(sem correspondências)']];
+      checkFlags(matches.join('\n'));
+      return matches.map(m => ['suc', m]);
+    },
+
+    clear() {
+      outputEl.innerHTML = '';
+      return [];
+    }
+  };
+
+  // ── Shell loop ────────────────────────────────────────────
+  let cmdHistory = [];
+  let histIdx = -1;
+
+  function run(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    cmdHistory.unshift(trimmed);
+    histIdx = -1;
+    print('usuario@blueteam:' + cwdToDisplay() + '$ ' + trimmed, 'cmd');
+    const parts = trimmed.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+    const cmd = parts[0];
+    const args = parts.slice(1).map(a => a.replace(/^["']|["']$/g, ''));
+    const fn = CMDS[cmd];
+    if (!fn) {
+      print(cmd + ': comando não encontrado. Digite  help  para ver os comandos disponíveis.', 'err');
+      return;
+    }
+    const lines = fn(args) || [];
+    for (const [cls, text] of lines) print(text, cls);
+  }
+
+  function fillCmd(val) {
+    const inp = document.getElementById('cmdInput');
+    inp.value = val;
+    inp.focus();
+  }
+
+  // Tab completion
+  function tabComplete(val) {
+    const parts = val.split(' ');
+    const partial = parts[parts.length - 1];
+    if (!partial) return val;
+    // completa comandos se for a primeira palavra
+    if (parts.length === 1) {
+      const match = Object.keys(CMDS).find(c => c.startsWith(partial));
+      return match ? match : val;
+    }
+    // completa nomes de arquivo/dir
+    const node = getNode(cwd);
+    if (!node) return val;
+    const match = Object.keys(node.children || {}).find(k => k.startsWith(partial));
+    if (match) { parts[parts.length - 1] = match; return parts.join(' '); }
+    return val;
+  }
+
+  const input = document.getElementById('cmdInput');
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      run(input.value);
+      input.value = '';
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (histIdx < cmdHistory.length - 1) histIdx++;
+      input.value = cmdHistory[histIdx] || '';
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (histIdx > 0) histIdx--;
+      else { histIdx = -1; input.value = ''; return; }
+      input.value = cmdHistory[histIdx] || '';
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      input.value = tabComplete(input.value);
+    }
+  });
+
+  // ── Boot ──────────────────────────────────────────────────
+  function printBoot() {
+    print('╔══════════════════════════════════════════════════╗', 'sys');
+    print('║     BLUE TEAM ARMY — LINUX TRAINING LAB  v1.1          ║', 'sys');
+    print('╚══════════════════════════════════════════════════╝', 'sys');
+    print('', 'out');
+    print('Sistema inicializado. Bem-vindo, analista.', 'out');
+    print('Existem 3 flags escondidas neste ambiente.', 'hint');
+    print('Encontre todas para completar a missão.', 'hint');
+    print('', 'out');
+    print('Digite  help  para ver os comandos disponíveis.', 'out');
+    print('', 'out');
+  }
+
+  printBoot();
+  input.focus();
+</script>
+
+</body>
+</html>
