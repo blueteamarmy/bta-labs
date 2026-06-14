@@ -1081,9 +1081,153 @@
       .act-num { display: none; }
       .ev-msg-input { width: 130px !important; }
     }
+
+    /* ── Token Gate ─────────────────────────────────────────── */
+    #token-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--navy);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .show-gate #token-gate { display: flex; }
+
+    .tg-logo { margin-bottom: 28px; }
+
+    .tg-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(18px, 3.5vw, 26px);
+      font-weight: 700;
+      color: #e8f4ff;
+      margin-bottom: 8px;
+    }
+
+    .tg-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      margin-bottom: 28px;
+    }
+
+    .tg-input {
+      display: block;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      outline: none;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      letter-spacing: 2px;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .tg-input:focus { border-color: var(--cyan); }
+    .tg-input.tg-shake { border-color: var(--red); animation: tg-shake 0.3s ease; }
+
+    @keyframes tg-shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+
+    .tg-btn {
+      display: block;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(0,229,255,0.06);
+      border: 1.5px solid var(--cyan);
+      padding: 10px 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 14px;
+    }
+
+    .tg-btn:hover { background: rgba(0,229,255,0.12); }
+
+    .tg-err-msg {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--red);
+      min-height: 16px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .tg-err-msg.visible { opacity: 1; }
+
+    /* ── Lab Complete — Back Button ─────────────────────────── */
+    .lc-back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--green);
+      background: transparent;
+      border: 1px solid var(--green);
+      padding: 10px 28px;
+      border-radius: 5px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .lc-back-btn:hover { background: rgba(0,229,160,0.08); }
   </style>
+  <script>
+    if (localStorage.getItem('bta-lab01-access') === 'BTA-LAB01-2026') {
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      document.documentElement.classList.add('show-gate');
+    }
+  </script>
 </head>
 <body>
+
+<div id="token-gate" class="token-gate" role="dialog" aria-modal="true" aria-label="Autenticação do Lab">
+  <div class="tg-logo">
+    <svg viewBox="0 0 40 46" width="52" height="60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+      <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+    </svg>
+  </div>
+  <h1 class="tg-title">LAB 01 — Acesso Restrito</h1>
+  <p class="tg-sub">Este lab é exclusivo para alunos matriculados.</p>
+  <input
+    type="text"
+    id="token-input"
+    class="tg-input"
+    placeholder="Digite seu token de acesso"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="none"
+    spellcheck="false"
+    aria-label="Token de acesso ao laboratório"
+  />
+  <button type="button" id="token-btn" class="tg-btn">Acessar Lab</button>
+  <p class="tg-err-msg" id="token-err" role="alert" aria-live="assertive">Token inválido.</p>
+</div>
 
 <div class="page">
 
@@ -1365,6 +1509,7 @@
         <h3 class="lc-title">Lab Concluído!</h3>
         <div class="lc-score" id="lc-score">0 pts</div>
         <p class="lc-msg">Você identificou um ataque coordenado contra dois servidores e correlacionou as evidências com sucesso. Excelente trabalho, analista.</p>
+        <a class="lc-back-btn" href="https://blueteam.army/courses">← Voltar para o Curso</a>
       </div>
     </div>
 
@@ -1744,6 +1889,39 @@
 <script>
 (function () {
   'use strict';
+
+  // ── Token Gate ────────────────────────────────────────────
+  const VALID_TOKEN = 'BTA-LAB01-2026';
+
+  function unlockGate() {
+    localStorage.setItem('bta-lab01-access', VALID_TOKEN);
+    document.documentElement.classList.remove('show-gate');
+    document.getElementById('cmdInput').focus();
+  }
+
+  (function initTokenGate() {
+    const inp = document.getElementById('token-input');
+    const btn = document.getElementById('token-btn');
+    const err = document.getElementById('token-err');
+    if (!inp || !btn) return;
+
+    function tryToken() {
+      if (inp.value.trim() === VALID_TOKEN) {
+        unlockGate();
+      } else {
+        err.classList.add('visible');
+        inp.classList.add('tg-shake');
+        inp.value = '';
+        setTimeout(() => inp.classList.remove('tg-shake'), 400);
+      }
+    }
+
+    btn.addEventListener('click', tryToken);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryToken();
+      err.classList.remove('visible');
+    });
+  })();
 
   // ── Estado Ato 2 ──────────────────────────────────────────
   let act2Score = 0;
