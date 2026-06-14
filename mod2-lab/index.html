@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Blue Team Army — Lab 02: Análise de Tráfego. Packet Viewer interativo." />
+  <title>LAB 02 — Análise de Tráfego | Blue Team Army</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0a0e1a;
+      --navy-mid:  #0d1525;
+      --navy-lite: #111e38;
+      --border:    #1a2a4a;
+      --border2:   #1a3060;
+      --cyan:      #00e5ff;
+      --blue:      #4a9eff;
+      --green:     #00e676;
+      --yellow:    #febc2e;
+      --red:       #ff1744;
+      --orange:    #ff9100;
+      --text:      #c8d8f0;
+      --text-dim:  #a0c4e0;
+      --text-faint:#2a4a7a;
+      --dim:       #8eaac8;
+      --white:     #e8f4ff;
+    }
+
+    html, body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* ── Token Gate ──────────────────────────────────────── */
+    #token-gate {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--navy);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px; text-align: center;
+    }
+    .show-gate #token-gate { display: flex; }
+    .tg-logo { margin-bottom: 28px; }
+    .tg-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(18px, 3.5vw, 26px); font-weight: 700;
+      color: var(--white); margin-bottom: 8px;
+    }
+    .tg-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px; color: var(--text-dim);
+      letter-spacing: .5px; margin-bottom: 28px;
+    }
+    .tg-input {
+      display: block;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; padding: 10px 16px;
+      border-radius: 6px; outline: none;
+      width: 100%; max-width: 340px;
+      text-align: center; letter-spacing: 2px;
+      transition: border-color .2s; margin-bottom: 12px;
+    }
+    .tg-input:focus { border-color: var(--cyan); }
+    .tg-input.tg-shake { border-color: var(--red); animation: tg-shake .3s ease; }
+    @keyframes tg-shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+    .tg-btn {
+      display: block;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(0,229,255,.06);
+      border: 1.5px solid var(--cyan);
+      padding: 10px 32px; border-radius: 6px;
+      cursor: pointer; transition: background .15s;
+      width: 100%; max-width: 340px; margin-bottom: 14px;
+    }
+    .tg-btn:hover { background: rgba(0,229,255,.12); }
+    .tg-err-msg {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--red);
+      min-height: 16px; opacity: 0; transition: opacity .2s;
+    }
+    .tg-err-msg.visible { opacity: 1; }
+
+    /* ── HUD (fixed top-right) ───────────────────────────── */
+    #hud {
+      position: fixed; top: 14px; right: 18px;
+      background: var(--navy-mid);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 6px 14px 7px;
+      z-index: 200; text-align: right;
+      pointer-events: none;
+      box-shadow: 0 2px 16px rgba(0,0,0,.4);
+    }
+    .hud-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-faint); display: block;
+    }
+    .hud-val {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 19px; font-weight: 700; color: var(--cyan); line-height: 1.1;
+    }
+    .hud-val .hud-total { font-size: 12px; color: var(--dim); font-weight: 400; }
+
+    /* ── Page layout ─────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 60px;
+      gap: 20px;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .site-header {
+      width: 100%; max-width: 920px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-hex { width: 40px; height: 40px; flex-shrink: 0; }
+    .logo-text {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 18px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1.5px; line-height: 1.1;
+    }
+    .logo-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .header-link {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; color: var(--blue);
+      text-decoration: none; letter-spacing: 1px;
+      border: 1px solid var(--border); padding: 6px 14px;
+      border-radius: 4px; transition: border-color .15s, color .15s;
+    }
+    .header-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      width: 100%; max-width: 920px;
+      text-align: center; padding: 6px 0 2px;
+    }
+    .hero-tag {
+      display: inline-block;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cyan); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 2px; margin-bottom: 14px;
+    }
+    .hero-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(22px, 4vw, 34px); font-weight: 700;
+      color: var(--white); line-height: 1.2; margin-bottom: 6px;
+    }
+    .hero-title span { color: var(--cyan); }
+    .hero-subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* Progress indicator */
+    .act-progress {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin: 16px auto 0; flex-wrap: wrap;
+    }
+    .act-step {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 14px;
+      border: 1px solid var(--border); border-radius: 20px;
+      font-family: 'Rajdhani', sans-serif; font-size: 12px;
+      color: var(--text-faint);
+      transition: border-color .3s, color .3s, background .3s;
+      white-space: nowrap;
+    }
+    .act-step--active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.06); }
+    .act-step--done   { border-color: var(--green); color: var(--green); background: rgba(0,230,118,.06); }
+    .step-num {
+      width: 17px; height: 17px; border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; flex-shrink: 0; line-height: 1;
+    }
+    .act-step--done .step-num { font-size: 0; }
+    .act-step--done .step-num::after { content: '✓'; font-size: 9px; }
+    .act-arrow { color: var(--border2); font-size: 14px; line-height: 1; }
+
+    /* ── Briefing card ───────────────────────────────────── */
+    .briefing-card {
+      width: 100%; max-width: 920px;
+      background: var(--navy-mid);
+      border: 1px solid var(--border2);
+      border-left: 4px solid var(--red);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .briefing-icon { font-size: 28px; flex-shrink: 0; }
+    .briefing-tag {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--red); margin-bottom: 6px; font-weight: 700;
+    }
+    .briefing-body {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px; color: var(--text-dim); line-height: 1.65;
+    }
+    .briefing-body strong { color: var(--cyan); font-weight: 600; }
+
+    /* ── Section wrapper ─────────────────────────────────── */
+    .section-wrap {
+      width: 100%; max-width: 920px;
+      opacity: 0; transform: translateY(24px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .section-wrap.visible       { opacity: 1; transform: translateY(0); }
+    .section-wrap.always-visible{ opacity: 1; transform: translateY(0); }
+
+    /* ── Mission header ──────────────────────────────────── */
+    .mission-header {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0;
+      padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+    .mission-num {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 28px; font-weight: 700;
+      color: var(--border2); line-height: 1; flex-shrink: 0; min-width: 36px;
+    }
+    .mission-header.active .mission-num { color: var(--cyan); }
+    .mission-head-text { flex: 1; }
+    .mission-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 4px;
+    }
+    .mission-brief {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px; color: var(--text-dim); line-height: 1.5;
+    }
+    .mission-score-box { text-align: right; flex-shrink: 0; }
+    .mission-score-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+    }
+    .mission-score-val {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 18px; font-weight: 700; color: var(--cyan);
+    }
+
+    /* ── Task checklist ──────────────────────────────────── */
+    .task-list {
+      background: #080c18;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .task-item {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--text-dim);
+      padding: 5px 8px; border-radius: 4px;
+      transition: color .3s;
+    }
+    .task-item.task-done { color: var(--green); }
+    .task-ico { font-size: 13px; flex-shrink: 0; width: 16px; text-align: center; }
+    .task-item.task-done .task-ico { color: var(--green); }
+    .task-pts-tag { margin-left: auto; font-size: 11px; color: var(--blue); flex-shrink: 0; }
+    .task-item.task-done .task-pts-tag { color: var(--green); }
+    .task-hint {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; color: var(--text-faint); margin-left: 2px;
+    }
+
+    /* ── Packet Viewer ───────────────────────────────────── */
+    .pv-wrap {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+    }
+    .pv-toolbar {
+      background: var(--navy-mid);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px 7px;
+    }
+    .pv-filter-row {
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    }
+    .pv-filter-label {
+      color: var(--dim); font-size: 11px;
+      font-family: 'Share Tech Mono', monospace; flex-shrink: 0;
+    }
+    #pv-filter {
+      flex: 1; min-width: 160px;
+      background: #080c18; border: 1px solid var(--border);
+      border-radius: 4px; padding: 5px 10px;
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    #pv-filter:focus   { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(74,158,255,.15); }
+    #pv-filter.valid   { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,.12); }
+    #pv-filter.invalid { border-color: var(--red);  box-shadow: 0 0 0 2px rgba(255,23,68,.15); }
+    .pv-sep { display: inline-block; width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+    .pv-btn {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--dim);
+      padding: 5px 12px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .pv-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .pv-btn.primary { border-color: var(--cyan); color: var(--cyan); }
+    .pv-btn.primary:hover { background: rgba(0,229,255,.1); }
+    #pv-proto {
+      background: #080c18; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text);
+      padding: 5px 8px;
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      cursor: pointer; outline: none;
+    }
+    #pv-counter {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; color: var(--dim); white-space: nowrap;
+    }
+    .pv-hints-row {
+      display: flex; gap: 5px; flex-wrap: wrap;
+      margin-top: 6px; align-items: center;
+    }
+    .hint-label { color: var(--dim); font-size: 10px; flex-shrink: 0; }
+    .hint-chip {
+      background: rgba(74,158,255,.08);
+      border: 1px solid rgba(74,158,255,.2);
+      border-radius: 3px; color: var(--blue);
+      padding: 2px 7px;
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+      cursor: pointer; transition: all .15s;
+    }
+    .hint-chip:hover { background: rgba(74,158,255,.18); border-color: var(--blue); }
+
+    .pv-legend {
+      display: flex; gap: 16px; align-items: center;
+      padding: 5px 16px;
+      background: #080c18; border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .leg-item {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--text-dim);
+    }
+    .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .leg-icmp { background: var(--yellow); }
+    .leg-syn  { background: var(--red); }
+    .leg-rst  { background: #ff4040; opacity: .85; }
+    .leg-http { background: var(--blue); }
+
+    /* Table */
+    .pv-table-wrap {
+      overflow-x: auto; overflow-y: auto; max-height: 380px;
+      scrollbar-width: thin; scrollbar-color: var(--border2) var(--navy);
+    }
+    .pv-table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+    .pv-table-wrap::-webkit-scrollbar-track { background: var(--navy); }
+    .pv-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .pv-table { width: 100%; border-collapse: collapse; min-width: 680px; }
+    .pv-table thead { position: sticky; top: 0; z-index: 2; }
+    .pv-table thead th {
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      padding: 7px 10px; text-align: left;
+      font-family: 'Rajdhani', sans-serif; font-size: 11px;
+      font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
+      color: var(--text-dim); white-space: nowrap;
+    }
+    .pv-table tbody tr {
+      border-bottom: 1px solid rgba(26,42,74,.5);
+      cursor: pointer; transition: background .1s;
+    }
+    .pv-table tbody tr:hover td { background: rgba(74,158,255,.07) !important; }
+    .pv-table tbody tr.pv-sel td { background: rgba(0,229,255,.13) !important; outline: 1px solid rgba(0,229,255,.28); outline-offset: -1px; }
+    .pv-table td { padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+    .pv-info-cell { max-width: 360px; color: var(--dim); font-size: 12px; }
+    .pv-mono { font-family: 'Share Tech Mono', monospace; font-size: 11px; }
+    .pv-dim  { color: var(--dim); }
+
+    tr.row-icmp { background: rgba(254,188,46,.06); }
+    tr.row-syn  { background: rgba(255,23,68,.06); }
+    tr.row-rst  { background: rgba(255,64,40,.1); }
+    tr.row-http { background: rgba(74,158,255,.07); }
+
+    .proto-badge {
+      display: inline-block; padding: 1px 7px; border-radius: 3px;
+      font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: bold;
+    }
+    .proto-icmp { background: rgba(254,188,46,.18); color: #febc2e; border: 1px solid rgba(254,188,46,.3); }
+    .proto-tcp  { background: rgba(255,23,68,.18);  color: #ff6b7a; border: 1px solid rgba(255,23,68,.3); }
+    .proto-http { background: rgba(74,158,255,.2);  color: #5eb5ff; border: 1px solid rgba(74,158,255,.35); }
+
+    /* Detail panel */
+    .pv-detail {
+      background: var(--navy-lite);
+      border-top: 2px solid var(--blue);
+      max-height: 0; overflow: hidden;
+      transition: max-height .3s ease;
+    }
+    .pv-detail--open { max-height: 300px; }
+
+    .pv-dh {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px;
+      color: var(--cyan); letter-spacing: 1px; text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .pv-close-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-dim); cursor: pointer;
+      padding: 2px 9px; border-radius: 3px;
+      font-size: 11px; font-family: 'Share Tech Mono', monospace;
+      transition: border-color .2s, color .2s;
+    }
+    .pv-close-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .pv-detail-body {
+      display: grid; grid-template-columns: 1fr 1fr;
+      max-height: 248px; overflow: hidden;
+    }
+    .pv-tree {
+      overflow-y: auto; overflow-x: hidden;
+      border-right: 1px solid var(--border); padding: 4px 0;
+    }
+    .pv-tree::-webkit-scrollbar { width: 4px; }
+    .pv-tree::-webkit-scrollbar-thumb { background: var(--border); }
+
+    details {}
+    .ts {
+      list-style: none; padding: 3px 10px;
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--cyan); cursor: pointer;
+      display: flex; align-items: center; gap: 4px; user-select: none;
+    }
+    .ts::before {
+      content: '▶'; font-size: 8px; color: var(--dim);
+      transition: transform .15s; display: inline-block; width: 10px;
+    }
+    details[open] > .ts::before { transform: rotate(90deg); }
+    .tf { display: flex; gap: 6px; padding: 1px 10px 1px 22px; }
+    .tk { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); min-width: 130px; flex-shrink: 0; }
+    .tv { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--white); word-break: break-all; }
+
+    .pv-hex { overflow: auto; padding: 6px 12px; background: #060a12; }
+    .pv-hex::-webkit-scrollbar { width: 4px; height: 4px; }
+    .pv-hex::-webkit-scrollbar-thumb { background: var(--border); }
+    #pv-hex-content {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; line-height: 1.7; color: var(--dim); white-space: pre;
+    }
+
+    .pv-state-cell {
+      text-align: center; padding: 36px 20px;
+      color: var(--text-faint);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    }
+
+    /* ── Closing section ─────────────────────────────────── */
+    .closing-inner {
+      background: var(--navy-mid);
+      border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 10px 10px; padding: 20px;
+    }
+    .corr-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 20px;
+    }
+    .corr-table th {
+      background: #080c18; color: var(--text-dim);
+      font-family: 'Rajdhani', sans-serif; font-size: 11px;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 14px; text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    .corr-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(26,42,74,.7);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; color: var(--text-dim); vertical-align: middle;
+    }
+    .corr-table td:first-child {
+      color: var(--blue);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; font-weight: 600; letter-spacing: .5px; white-space: nowrap;
+    }
+    .corr-match {
+      font-family: 'Rajdhani', sans-serif; font-size: 10px;
+      background: rgba(0,230,118,.15); color: var(--green);
+      border: 1px solid rgba(0,230,118,.25);
+      padding: 1px 6px; border-radius: 3px;
+      margin-left: 8px; letter-spacing: .5px; font-weight: 600;
+      vertical-align: middle;
+    }
+    .corr-hi { color: var(--cyan); }
+
+    .narrative {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px; color: var(--text-dim); line-height: 1.7;
+      margin-bottom: 24px; padding: 16px;
+      background: #080c18;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 6px 6px 0;
+    }
+    .narrative p { margin-bottom: 10px; }
+    .narrative p:last-child { margin-bottom: 0; }
+    .narrative strong { color: var(--cyan); font-weight: 600; }
+    .narrative em { color: var(--yellow); font-style: normal; }
+
+    .confirm-btn {
+      display: block; width: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); background: rgba(0,229,255,.06);
+      border: 2px solid var(--cyan); padding: 14px 24px;
+      border-radius: 8px; cursor: pointer;
+      transition: background .2s, box-shadow .2s; margin-bottom: 20px;
+    }
+    .confirm-btn:hover:not(:disabled) { background: rgba(0,229,255,.12); box-shadow: 0 0 20px rgba(0,229,255,.1); }
+    .confirm-btn:disabled {
+      cursor: default; color: var(--green);
+      border-color: var(--green); background: rgba(0,230,118,.06);
+    }
+
+    .lab-complete-banner {
+      opacity: 0; transform: translateY(12px);
+      transition: opacity .5s ease, transform .5s ease;
+      background: var(--navy-mid); border: 2px solid var(--cyan);
+      border-radius: 10px; padding: 28px; text-align: center;
+    }
+    .lab-complete-banner.banner-visible { opacity: 1; transform: translateY(0); }
+    .lc-icon { font-size: 36px; margin-bottom: 8px; }
+    .lc-title {
+      font-family: 'Exo 2', sans-serif; font-size: 24px; font-weight: 700;
+      color: var(--cyan); margin-bottom: 6px;
+    }
+    .lc-score {
+      font-family: 'Exo 2', sans-serif; font-size: 40px; font-weight: 700;
+      color: var(--yellow); margin-bottom: 10px; letter-spacing: 2px;
+    }
+    .lc-msg {
+      font-family: 'Rajdhani', sans-serif; font-size: 15px;
+      color: var(--text-dim); max-width: 480px; margin: 0 auto; line-height: 1.6;
+    }
+    .lc-back-btn {
+      display: inline-block; margin-top: 20px;
+      font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      font-weight: 700; letter-spacing: 1px;
+      color: var(--green); background: transparent;
+      border: 1px solid var(--green); padding: 10px 28px;
+      border-radius: 5px; text-decoration: none;
+      transition: background .15s;
+    }
+    .lc-back-btn:hover { background: rgba(0,230,118,.08); }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .flag-toast {
+      display: none; position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #0b1d3a; border: 2px solid var(--cyan);
+      border-radius: 10px; padding: 28px 36px;
+      text-align: center; z-index: 500;
+      pointer-events: none; min-width: 220px;
+    }
+    .flag-toast.show { display: block; animation: popin .28s ease; }
+    @keyframes popin {
+      from { transform: translate(-50%,-50%) scale(.82); opacity: 0; }
+      to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+    }
+    .ft-label { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+    .ft-pts   { font-family: 'Exo 2', sans-serif; font-size: 32px; color: var(--cyan); font-weight: 700; margin: 6px 0; }
+    .ft-msg   { font-size: 12px; color: var(--green); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .site-footer {
+      width: 100%; max-width: 920px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .footer-text { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--text-faint); }
+    .footer-link { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); text-decoration: none; }
+    .footer-link:hover { color: var(--cyan); }
+
+    @media (max-width: 620px) {
+      .header-link { display: none; }
+      .pv-detail-body { grid-template-columns: 1fr; }
+      .pv-hex { display: none; }
+      .mission-header { flex-wrap: wrap; }
+      .mission-score-box { width: 100%; text-align: left; }
+      .mission-num { display: none; }
+      #hud { top: auto; bottom: 14px; right: 14px; }
+    }
+  </style>
+
+  <script>
+    if (localStorage.getItem('bta-lab02-access') === 'BTA-LAB02-2026') {
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      document.documentElement.classList.add('show-gate');
+    }
+  </script>
+</head>
+<body>
+
+<!-- Token Gate -->
+<div id="token-gate" role="dialog" aria-modal="true" aria-label="Autenticação do Lab">
+  <div class="tg-logo">
+    <svg viewBox="0 0 40 46" width="52" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+      <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+    </svg>
+  </div>
+  <h1 class="tg-title">LAB 02 — Acesso Restrito</h1>
+  <p class="tg-sub">Este lab é exclusivo para alunos matriculados.</p>
+  <input type="text" id="token-input" class="tg-input"
+    placeholder="Digite seu token de acesso"
+    autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+    aria-label="Token de acesso" />
+  <button type="button" id="token-btn" class="tg-btn">Acessar Lab</button>
+  <p class="tg-err-msg" id="token-err" role="alert" aria-live="assertive">Token inválido.</p>
+</div>
+
+<!-- Score HUD -->
+<div id="hud" aria-label="Pontuação atual">
+  <span class="hud-label">Pontuação</span>
+  <div class="hud-val"><span id="hud-pts">0</span> <span class="hud-total">/ 800 pts</span></div>
+</div>
+
+<!-- Toast -->
+<div class="flag-toast" id="flag-toast" role="status">
+  <div class="ft-label">🚩 Objetivo Concluído!</div>
+  <div class="ft-pts" id="toast-pts">+100 pts</div>
+  <div class="ft-msg" id="toast-msg"></div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <a class="logo" href="#">
+      <svg class="logo-hex" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+        <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+        <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+      </svg>
+      <div>
+        <div class="logo-text">BLUE TEAM ARMY</div>
+        <div class="logo-sub">Training Lab</div>
+      </div>
+    </a>
+    <a class="header-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army &rarr;</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-tag">Módulo 2 · Redes para Blue Team</div>
+    <h1 class="hero-title" id="hero-title">LAB 02 — <span>Análise de Tráfego</span></h1>
+    <p class="hero-subtitle">Identifique o ataque. Correlacione as evidências.</p>
+
+    <div class="act-progress" role="list" aria-label="Progresso do laboratório">
+      <div class="act-step act-step--active" id="prog-1" role="listitem">
+        <span class="step-num" aria-hidden="true">1</span>
+        Missão 1: Port Scan
+      </div>
+      <div class="act-arrow" aria-hidden="true">→</div>
+      <div class="act-step" id="prog-2" role="listitem">
+        <span class="step-num" aria-hidden="true">2</span>
+        Missão 2: Beacon C2
+      </div>
+      <div class="act-arrow" aria-hidden="true">→</div>
+      <div class="act-step" id="prog-3" role="listitem">
+        <span class="step-num" aria-hidden="true">3</span>
+        Fechamento
+      </div>
+    </div>
+  </section>
+
+  <!-- Briefing -->
+  <div class="briefing-card" role="region" aria-label="Briefing do incidente">
+    <div class="briefing-icon" aria-hidden="true">🚨</div>
+    <div>
+      <div class="briefing-tag">Alerta SOC — Incidente Ativo</div>
+      <div class="briefing-body">
+        <strong>ALERTA</strong> — Tráfego anômalo detectado na rede <strong>corp.local</strong>.<br>
+        Sensor IDS reportou atividade suspeita originada de <strong>10.20.45.113</strong>.<br>
+        Sua missão: analisar a captura de pacotes e identificar o tipo de ataque.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MISSÃO 1 ══════════════════════════════════════════ -->
+  <div class="section-wrap always-visible" aria-label="Missão 1: Port Scan">
+
+    <div class="mission-header active">
+      <div class="mission-num">01</div>
+      <div class="mission-head-text">
+        <h2 class="mission-title">Missão 1 — Port Scan</h2>
+        <p class="mission-brief">Analise os pacotes e identifique a varredura de portas realizada pelo atacante. Use os filtros e clique nos pacotes para explorar os detalhes.</p>
+      </div>
+      <div class="mission-score-box">
+        <div class="mission-score-label">Pontos M1</div>
+        <div class="mission-score-val" id="m1-pts">0 / 350</div>
+      </div>
+    </div>
+
+    <div class="task-list" aria-label="Objetivos da Missão 1">
+      <div class="task-item" id="task-m1-ip-src">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar o IP de origem do scan</span>
+        <span class="task-hint">→ filtrar ip.src == 10.20.45.113</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+      <div class="task-item" id="task-m1-syn">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar a técnica usada (TCP SYN Scan)</span>
+        <span class="task-hint">→ filtrar tcp.flags.syn == 1</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+      <div class="task-item" id="task-m1-ports">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Contar quantas portas foram varridas</span>
+        <span class="task-hint">→ clique em 3 ou mais pacotes SYN diferentes</span>
+        <span class="task-pts-tag">+50 pts</span>
+      </div>
+      <div class="task-item" id="task-m1-port22">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar qual porta respondeu ao scan</span>
+        <span class="task-hint">→ filtrar tcp.port == 22 ou encontrar pacotes RST/ACK</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+    </div>
+
+    <!-- ── Packet Viewer ───────────────────────────────── -->
+    <div class="pv-wrap">
+      <div class="pv-toolbar">
+        <div class="pv-filter-row">
+          <span class="pv-filter-label">🔬 Filtro:</span>
+          <input id="pv-filter" type="text"
+            placeholder='ip.src == 10.20.45.113   |   tcp.flags.syn == 1   |   http'
+            autocomplete="off" spellcheck="false"
+            aria-label="Expressão de filtro de pacotes" />
+          <button class="pv-btn primary" id="pv-apply" type="button">Aplicar</button>
+          <button class="pv-btn" id="pv-clear" type="button">Limpar</button>
+          <span class="pv-sep"></span>
+          <span class="pv-filter-label">Proto:</span>
+          <select id="pv-proto" aria-label="Filtrar por protocolo"></select>
+          <span class="pv-sep"></span>
+          <span id="pv-counter" aria-live="polite"></span>
+        </div>
+        <div class="pv-hints-row" aria-label="Filtros rápidos">
+          <span class="hint-label">Rápidos:</span>
+          <button class="hint-chip" data-filter="icmp" type="button">icmp</button>
+          <button class="hint-chip" data-filter="tcp" type="button">tcp</button>
+          <button class="hint-chip" data-filter="http" type="button">http</button>
+          <button class="hint-chip" data-filter="ip.src == 10.20.45.113" type="button">ip.src == 10.20.45.113</button>
+          <button class="hint-chip" data-filter="tcp.flags.syn == 1" type="button">tcp.flags.syn == 1</button>
+          <button class="hint-chip" data-filter="tcp.port == 22" type="button">tcp.port == 22</button>
+          <button class="hint-chip" data-filter="tcp.flags.rst == 1" type="button">tcp.flags.rst == 1</button>
+          <button class="hint-chip" data-filter="tcp.port == 8080" type="button">tcp.port == 8080</button>
+        </div>
+      </div>
+
+      <div class="pv-legend" aria-label="Legenda de cores">
+        <span class="leg-item"><span class="leg-dot leg-icmp" aria-hidden="true"></span>ICMP sweep</span>
+        <span class="leg-item"><span class="leg-dot leg-syn"  aria-hidden="true"></span>TCP SYN scan</span>
+        <span class="leg-item"><span class="leg-dot leg-rst"  aria-hidden="true"></span>RST/ACK</span>
+        <span class="leg-item"><span class="leg-dot leg-http" aria-hidden="true"></span>HTTP</span>
+      </div>
+
+      <div class="pv-table-wrap">
+        <table class="pv-table" aria-label="Lista de pacotes capturados">
+          <thead>
+            <tr>
+              <th style="width:40px">No.</th>
+              <th style="width:90px">Hora</th>
+              <th style="width:130px">Origem</th>
+              <th style="width:130px">Destino</th>
+              <th style="width:72px">Proto</th>
+              <th style="width:50px">Tam.</th>
+              <th>Informações</th>
+            </tr>
+          </thead>
+          <tbody id="pv-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="pv-detail" id="pv-detail"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MISSÃO 2 ══════════════════════════════════════════ -->
+  <div class="section-wrap" id="m2-section" style="display:none" aria-label="Missão 2: Beacon C2">
+
+    <div class="mission-header active">
+      <div class="mission-num">02</div>
+      <div class="mission-head-text">
+        <h2 class="mission-title">Missão 2 — Beacon C2</h2>
+        <p class="mission-brief">O atacante instalou um malware que se comunica periodicamente com um servidor de comando e controle (C2). Use o Packet Viewer acima para identificar o canal.</p>
+      </div>
+      <div class="mission-score-box">
+        <div class="mission-score-label">Pontos M2</div>
+        <div class="mission-score-val" id="m2-pts">0 / 350</div>
+      </div>
+    </div>
+
+    <div class="task-list" aria-label="Objetivos da Missão 2">
+      <div class="task-item" id="task-m2-domain">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar o domínio / host C2</span>
+        <span class="task-hint">→ filtrar http ou clicar no pacote GET /setup.exe</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+      <div class="task-item" id="task-m2-interval">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar o intervalo do beacon</span>
+        <span class="task-hint">→ clique em 2 ou mais pacotes POST /gate.php</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+      <div class="task-item" id="task-m2-c2ip">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Identificar o IP do servidor C2</span>
+        <span class="task-hint">→ inspecionar campo Host nos detalhes do pacote</span>
+        <span class="task-pts-tag">+100 pts</span>
+      </div>
+      <div class="task-item" id="task-m2-port8080">
+        <span class="task-ico" aria-hidden="true">☐</span>
+        <span>Filtrar apenas tráfego de beacon</span>
+        <span class="task-hint">→ filtrar tcp.port == 8080</span>
+        <span class="task-pts-tag">+50 pts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FECHAMENTO ════════════════════════════════════════ -->
+  <div class="section-wrap" id="closing-section" style="display:none" aria-label="Fechamento">
+
+    <div class="mission-header" style="border-color:var(--border2)">
+      <div class="mission-num" style="color:var(--green)">✓</div>
+      <div class="mission-head-text">
+        <h2 class="mission-title">Fechamento — Correlação de Evidências</h2>
+        <p class="mission-brief">Você analisou a captura completa. Correlacione as evidências e confirme sua conclusão como analista SOC.</p>
+      </div>
+    </div>
+
+    <div class="closing-inner">
+      <table class="corr-table">
+        <thead>
+          <tr>
+            <th>Evidência</th>
+            <th>Port Scan</th>
+            <th>Beacon C2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Origem</td>
+            <td><span class="corr-hi">10.20.45.113</span> <span class="corr-match">✓ MATCH</span></td>
+            <td><span class="corr-hi">10.20.45.113</span></td>
+          </tr>
+          <tr>
+            <td>Técnica</td>
+            <td>TCP SYN Scan</td>
+            <td>HTTP POST /gate.php</td>
+          </tr>
+          <tr>
+            <td>Alvo</td>
+            <td>192.168.10.7</td>
+            <td><span class="corr-hi">10.20.45.113:8080</span></td>
+          </tr>
+          <tr>
+            <td>Horário</td>
+            <td>03:12</td>
+            <td>03:18</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="narrative">
+        <p>O atacante <strong>10.20.45.113</strong> iniciou um sweep ICMP às <strong>03:12</strong> para mapear hosts ativos na sub-rede, seguido imediatamente de um <strong>TCP SYN Scan</strong> contra a vítima <strong>192.168.10.7</strong> — técnica que não completa o handshake, minimizando rastros em logs de aplicação.</p>
+        <p>Dois minutos após o scan (<strong>03:14</strong>), a vítima realizou um download HTTP de <em>/setup.exe</em> a partir do domínio <em>update-cdn185.net</em> — um dropper. A partir das <strong>03:18</strong>, o malware instalado iniciou comunicação periódica com <strong>/gate.php</strong> a cada 5 minutos, padrão de beacon C2 com jitter fixo. O scan precedeu o beacon — reconhecimento antes da comunicação de comando e controle.</p>
+      </div>
+
+      <button class="confirm-btn" id="confirm-btn" type="button">Confirmar Análise &rarr; +100 pts</button>
+
+      <div class="lab-complete-banner" id="lab-complete" style="display:none">
+        <div class="lc-icon">🏆</div>
+        <h3 class="lc-title">Lab Concluído!</h3>
+        <div class="lc-score" id="lc-score-val">0 pts</div>
+        <p class="lc-msg">Você identificou um TCP SYN Scan seguido de infecção e comunicação C2 via HTTP POST. Excelente análise de tráfego, analista.</p>
+        <a class="lc-back-btn" href="https://blueteam.army/courses">&larr; Voltar para o Curso</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span class="footer-text">&copy; 2025 Blue Team Army. Todos os direitos reservados.</span>
+    <a class="footer-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army</a>
+  </footer>
+
+</div><!-- .page -->
+
+<script>
+(function () {
+'use strict';
+
+/* ── Token Gate ──────────────────────────────────────── */
+const VALID_TOKEN = 'BTA-LAB02-2026';
+(function initGate() {
+  const inp = document.getElementById('token-input');
+  const btn = document.getElementById('token-btn');
+  const err = document.getElementById('token-err');
+  if (!inp || !btn) return;
+
+  function tryToken() {
+    if (inp.value.trim() === VALID_TOKEN) {
+      localStorage.setItem('bta-lab02-access', VALID_TOKEN);
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      err.classList.add('visible');
+      inp.classList.add('tg-shake');
+      inp.value = '';
+      setTimeout(() => inp.classList.remove('tg-shake'), 400);
+    }
+  }
+  btn.addEventListener('click', tryToken);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryToken();
+    err.classList.remove('visible');
+  });
+})();
+
+/* ── Score ───────────────────────────────────────────── */
+let totalScore = 0;
+let m1Score    = 0;
+let m2Score    = 0;
+const done     = new Set();
+
+const M1_THRESHOLD    = 250;
+const CLOSE_THRESHOLD = 600;
+
+function award(key, pts, msg) {
+  if (done.has(key)) return;
+  done.add(key);
+  totalScore += pts;
+  if (key.startsWith('m1-')) m1Score += pts;
+  if (key.startsWith('m2-')) m2Score += pts;
+
+  updateHUD();
+  updateMissionPts();
+  showToast(pts, msg);
+  markTask('task-' + key);
+
+  if (m1Score >= M1_THRESHOLD && !done.has('_m2-revealed')) {
+    done.add('_m2-revealed');
+    setTimeout(revealM2, 1800);
+  }
+  if (totalScore >= CLOSE_THRESHOLD && !done.has('_closing-revealed')) {
+    done.add('_closing-revealed');
+    setTimeout(revealClosing, 2200);
+  }
+}
+
+function updateHUD() {
+  document.getElementById('hud-pts').textContent = totalScore;
+}
+
+function updateMissionPts() {
+  document.getElementById('m1-pts').textContent = m1Score + ' / 350';
+  document.getElementById('m2-pts').textContent = m2Score + ' / 350';
+}
+
+function markTask(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('task-done');
+  const ico = el.querySelector('.task-ico');
+  if (ico) ico.textContent = '☑';
+}
+
+function showToast(pts, msg) {
+  const t = document.getElementById('flag-toast');
+  document.getElementById('toast-pts').textContent = '+' + pts + ' pts';
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function setProgStep(n, state) {
+  const el = document.getElementById('prog-' + n);
+  if (!el) return;
+  el.classList.remove('act-step--active', 'act-step--done');
+  if (state === 'active') el.classList.add('act-step--active');
+  if (state === 'done')   el.classList.add('act-step--done');
+}
+
+function revealSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'block';
+  el.offsetHeight; // force reflow
+  el.classList.add('visible');
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+function revealM2() {
+  revealSection('m2-section');
+  setProgStep(1, 'done');
+  setProgStep(2, 'active');
+  // apply any objectives earned before reveal
+  ['m2-domain','m2-interval','m2-c2ip','m2-port8080'].forEach(k => {
+    if (done.has(k)) markTask('task-' + k);
+  });
+}
+
+function revealClosing() {
+  revealSection('closing-section');
+  if (!done.has('_m2-revealed')) { setProgStep(2, 'done'); }
+  setProgStep(3, 'active');
+}
+
+/* ── Packet Viewer ───────────────────────────────────── */
+let allPackets  = [];
+let textFilter  = null;
+let protoFilter = '';
+let selPkt      = null;
+
+const synClicked = new Set();
+let postClicks   = 0;
+
+const tbody    = document.getElementById('pv-tbody');
+const counterEl= document.getElementById('pv-counter');
+const filterEl = document.getElementById('pv-filter');
+const protoEl  = document.getElementById('pv-proto');
+const detailEl = document.getElementById('pv-detail');
+
+fetch('packets.json')
+  .then(r => r.json())
+  .then(json => {
+    allPackets = json.packets;
+    const protos = ['All', ...new Set(allPackets.map(p => p.proto))];
+    protos.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p === 'All' ? '' : p;
+      opt.textContent = p;
+      protoEl.appendChild(opt);
+    });
+    render();
+  })
+  .catch(() => {
+    tbody.innerHTML = '<tr><td colspan="7" class="pv-state-cell">Erro ao carregar packets.json</td></tr>';
+  });
+
+document.getElementById('pv-apply').addEventListener('click', applyFilter);
+document.getElementById('pv-clear').addEventListener('click', clearFilter);
+filterEl.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilter(); });
+protoEl.addEventListener('change', () => { protoFilter = protoEl.value; render(); });
+document.querySelectorAll('.hint-chip').forEach(btn =>
+  btn.addEventListener('click', () => { filterEl.value = btn.dataset.filter; applyFilter(); })
+);
+
+function applyFilter() {
+  const expr = filterEl.value.trim();
+  if (!expr) {
+    textFilter = null;
+    filterEl.className = '';
+  } else {
+    const fn = parseFilter(expr);
+    if (fn === null) { filterEl.className = 'invalid'; return; }
+    textFilter = fn;
+    filterEl.className = 'valid';
+    checkFilterScore(expr.toLowerCase().replace(/\s+/g, ''));
+  }
+  render();
+}
+
+function clearFilter() {
+  filterEl.value = ''; filterEl.className = '';
+  textFilter = null; protoFilter = '';
+  protoEl.value = '';
+  render();
+}
+
+function checkFilterScore(lo) {
+  if (lo === 'ip.src==10.20.45.113') award('m1-ip-src',  100, 'IP de origem do atacante identificado!');
+  if (lo === 'tcp.flags.syn==1')     award('m1-syn',     100, 'Técnica TCP SYN Scan identificada!');
+  if (lo === 'tcp.port==22')         award('m1-port22',  100, 'Porta 22 (SSH) respondeu ao scan!');
+  if (lo === 'tcp.flags.rst==1')     award('m1-port22',  100, 'Respostas RST/ACK identificadas!');
+  if (lo === 'http')                 award('m2-domain',  100, 'Tráfego HTTP C2 identificado!');
+  if (lo === 'tcp.port==8080')       award('m2-port8080', 50, 'Porta de beacon C2 filtrada!');
+}
+
+function parseFilter(raw) {
+  const lo = raw.trim().toLowerCase();
+  if (!lo) return () => true;
+
+  if (lo === 'icmp') return p => p.proto === 'ICMP';
+  if (lo === 'http') return p => p.proto === 'HTTP';
+  if (lo === 'tcp')  return p => p.proto === 'TCP' || p.proto === 'HTTP';
+
+  let m;
+  m = /^ip\.addr\s*==\s*(\S+)$/.exec(lo);
+  if (m) { const ip = m[1]; return p => p.src === ip || p.dst === ip; }
+
+  m = /^ip\.src\s*==\s*(\S+)$/.exec(lo);
+  if (m) { const ip = m[1]; return p => p.src === ip; }
+
+  m = /^ip\.dst\s*==\s*(\S+)$/.exec(lo);
+  if (m) { const ip = m[1]; return p => p.dst === ip; }
+
+  m = /^(?:tcp|udp)\.port\s*==\s*(\d+)$/.exec(lo);
+  if (m) { const n = parseInt(m[1]); return p => p.transport.src_port === n || p.transport.dst_port === n; }
+
+  if (/^tcp\.flags\.syn\s*==\s*1$/.test(lo))
+    return p => p.proto === 'TCP' && (p.transport.flags || '').includes('SYN');
+
+  if (/^tcp\.flags\.rst\s*==\s*1$/.test(lo))
+    return p => (p.transport.flags || '').includes('RST');
+
+  /* free text */
+  return p =>
+    p.src.includes(lo) || p.dst.includes(lo) ||
+    p.proto.toLowerCase().includes(lo) ||
+    p.info.toLowerCase().includes(lo);
+}
+
+function render() {
+  const filtered = allPackets.filter(p =>
+    (!textFilter || textFilter(p)) && (!protoFilter || p.proto === protoFilter)
+  );
+  counterEl.textContent = filtered.length + ' de ' + allPackets.length + ' pacotes';
+  tbody.innerHTML = '';
+  filtered.forEach(pkt => {
+    const tr = document.createElement('tr');
+    tr.className = rowClass(pkt);
+    if (selPkt && selPkt.no === pkt.no) tr.classList.add('pv-sel');
+    tr.innerHTML =
+      `<td class="pv-mono pv-dim">${pkt.no}</td>` +
+      `<td class="pv-mono">${pkt.time}</td>` +
+      `<td class="pv-mono">${pkt.src}</td>` +
+      `<td class="pv-mono">${pkt.dst}</td>` +
+      `<td><span class="proto-badge proto-${pkt.proto.toLowerCase()}">${pkt.proto}</span></td>` +
+      `<td class="pv-mono pv-dim">${pkt.len}</td>` +
+      `<td class="pv-info-cell">${esc(pkt.info)}</td>`;
+    tr.addEventListener('click', () => selectPkt(pkt, tr));
+    tbody.appendChild(tr);
+  });
+}
+
+function rowClass(pkt) {
+  const f = (pkt.transport.flags || '').toUpperCase();
+  if (pkt.proto === 'HTTP') return 'row-http';
+  if (pkt.proto === 'ICMP') return 'row-icmp';
+  if (f.includes('RST'))    return 'row-rst';
+  if (f.includes('SYN'))    return 'row-syn';
+  return '';
+}
+
+function selectPkt(pkt, tr) {
+  selPkt = pkt;
+  tbody.querySelectorAll('.pv-sel').forEach(r => r.classList.remove('pv-sel'));
+  tr.classList.add('pv-sel');
+  showDetail(pkt);
+  checkClickScore(pkt);
+}
+
+function checkClickScore(pkt) {
+  const t = pkt.transport;
+  const f = (t.flags || '').toUpperCase();
+
+  // M1: SYN packets → count unique
+  if (pkt.proto === 'TCP' && f.includes('SYN') && !f.includes('RST')) {
+    synClicked.add(pkt.no);
+    if (synClicked.size >= 3) award('m1-ports', 50, 'Múltiplas portas varridas identificadas!');
+  }
+
+  // M1: RST/ACK response → port 22 info
+  if (f.includes('RST')) {
+    award('m1-port22', 100, 'Respostas RST/ACK identificadas!');
+  }
+
+  // M2: HTTP GET (pkt 24) → domain/C2
+  if (pkt.proto === 'HTTP' && t.method === 'GET') {
+    award('m2-domain', 100, 'Domínio C2 identificado: ' + (t.host || ''));
+  }
+
+  // M2: HTTP POST /gate.php → beacon
+  if (pkt.proto === 'HTTP' && t.method === 'POST' && t.uri === '/gate.php') {
+    if (t.host === '10.20.45.113:8080') award('m2-c2ip', 100, 'Servidor C2 identificado: 10.20.45.113:8080!');
+    postClicks++;
+    if (postClicks >= 2) award('m2-interval', 100, 'Intervalo de beacon: 5 minutos entre POSTs!');
+  }
+}
+
+/* ── Detail panel ────────────────────────────────────── */
+function showDetail(pkt) {
+  const t       = pkt.transport;
+  const srcPort = t.src_port ? ':' + t.src_port : '';
+  const dstPort = t.dst_port ? ':' + t.dst_port : '';
+  const title   = 'Pacote ' + pkt.no + '  ·  ' + pkt.proto +
+    '  ·  ' + pkt.src + srcPort + ' → ' + pkt.dst + dstPort +
+    '  ·  ' + pkt.len + ' bytes';
+
+  detailEl.innerHTML =
+    '<div class="pv-dh">' +
+    '<span>🔎 ' + esc(title) + '</span>' +
+    '<button class="pv-close-btn" id="pv-close" type="button">✕ Fechar</button>' +
+    '</div>' +
+    '<div class="pv-detail-body">' +
+    '<div class="pv-tree">' + renderTree(pkt) + '</div>' +
+    '<div class="pv-hex"><pre id="pv-hex-content">' + esc(formatHexDump(buildBytes(pkt))) + '</pre></div>' +
+    '</div>';
+
+  detailEl.classList.add('pv-detail--open');
+
+  document.getElementById('pv-close').addEventListener('click', () => {
+    detailEl.classList.remove('pv-detail--open');
+    selPkt = null;
+    tbody.querySelectorAll('.pv-sel').forEach(r => r.classList.remove('pv-sel'));
+  });
+}
+
+function renderTree(pkt) {
+  const t = pkt.transport;
+  let html = '';
+
+  html += section('Informações do Frame', [
+    ['Número',     pkt.no],
+    ['Timestamp',  '2024-11-08 ' + pkt.time],
+    ['Tamanho',    pkt.len + ' bytes'],
+    ['Interface',  'eth0'],
+  ]);
+
+  html += section('Ethernet II', [
+    ['Destino',  pkt.eth_dst],
+    ['Origem',   pkt.eth_src],
+    ['Tipo',     'IPv4 (0x0800)'],
+  ]);
+
+  const pid = { ICMP: 'ICMP (1)', TCP: 'TCP (6)', HTTP: 'TCP (6)' };
+  html += section('Internet Protocol v4', [
+    ['Versão',           '4'],
+    ['Comp. Cabeçalho',  '20 bytes'],
+    ['Comp. Total',      pkt.len - 14],
+    ['TTL',              pkt.ip_ttl],
+    ['Protocolo',        pid[pkt.proto] || pkt.proto],
+    ['Origem',           pkt.src],
+    ['Destino',          pkt.dst],
+  ]);
+
+  if (pkt.proto === 'ICMP') {
+    const tname = t.icmp_type === 8 ? 'Echo request' : t.icmp_type === 0 ? 'Echo reply' : String(t.icmp_type);
+    html += section('ICMP', [
+      ['Tipo',  t.icmp_type + ' (' + tname + ')'],
+      ['Código',t.icmp_code],
+      ['ID',    t.id],
+      ['Seq',   t.seq],
+    ]);
+  } else if (pkt.proto === 'TCP') {
+    html += section('Transmission Control Protocol', [
+      ['Porta Origem',  t.src_port],
+      ['Porta Destino', t.dst_port],
+      ['Flags',         t.flags],
+      ['Seq',           t.seq],
+      ['Ack',           t.ack],
+      ['Window',        t.win != null ? t.win : 65535],
+    ]);
+  } else if (pkt.proto === 'HTTP') {
+    const fields = [
+      ['Porta Origem',  t.src_port],
+      ['Porta Destino', t.dst_port],
+      ['Flags TCP',     t.flags],
+      ['Método',        t.method],
+      ['URI',           t.uri],
+      ['Host',          t.host],
+    ];
+    if (t.user_agent)      fields.push(['User-Agent',     t.user_agent]);
+    if (t.content_type)    fields.push(['Content-Type',   t.content_type]);
+    if (t.content_length != null) fields.push(['Content-Length', t.content_length]);
+    html += section('HTTP', fields);
+  }
+
+  return html;
+}
+
+function section(label, fields) {
+  return '<details open><summary class="ts">' + esc(label) + '</summary>' +
+    fields.map(([k, v]) =>
+      '<div class="tf"><span class="tk">' + esc(String(k)) + '</span>' +
+      '<span class="tv">' + esc(String(v)) + '</span></div>'
+    ).join('') +
+    '</details>';
+}
+
+function buildBytes(pkt) {
+  const b   = [];
+  const mac = m => m.split(':').map(h => parseInt(h, 16));
+  const ip4 = a => a.split('.').map(Number);
+  const u16 = n => [(n >> 8) & 0xff, n & 0xff];
+  const pn  = { ICMP:1, TCP:6, HTTP:6 }[pkt.proto] || 0;
+
+  b.push(...mac(pkt.eth_dst), ...mac(pkt.eth_src), 0x08, 0x00);
+
+  const ipLen = pkt.len - 14;
+  b.push(
+    0x45, 0x00, ...u16(ipLen),
+    0x1a, (0x40 + pkt.no) & 0xff, 0x40, 0x00,
+    pkt.ip_ttl, pn, 0x00, 0x00,
+    ...ip4(pkt.src), ...ip4(pkt.dst)
+  );
+
+  const t = pkt.transport;
+  if (pkt.proto === 'ICMP') {
+    b.push(t.icmp_type, t.icmp_code, 0x4a, 0x2e, 0x00, 0x01, ...u16(t.seq));
+    const fill = 'abcdefghijklmnopqrstuvwxyz012345';
+    while (b.length < pkt.len) b.push(fill.charCodeAt((b.length - 42) % fill.length));
+  } else if (pkt.proto === 'TCP' || pkt.proto === 'HTTP') {
+    const fb = { 'SYN':0x02, 'RST, ACK':0x14, 'PSH, ACK':0x18, 'ACK':0x10 }[t.flags] || 0x02;
+    b.push(
+      ...u16(t.src_port), ...u16(t.dst_port),
+      0x1a, 0x2b, 0x3c, (0x4d + pkt.no) & 0xff,
+      0x00, 0x00, 0x00, 0x00,
+      0x50, fb, ...u16(t.win != null ? t.win : 65535),
+      0x00, 0x00, 0x00, 0x00
+    );
+    if (t.method) {
+      const hdrs = t.method + ' ' + t.uri + ' HTTP/1.1\r\nHost: ' + t.host + '\r\nUser-Agent: Mozilla/5.0\r\n\r\n';
+      for (let i = 0; i < hdrs.length && b.length < pkt.len; i++)
+        b.push(hdrs.charCodeAt(i) & 0xff);
+    }
+  }
+  while (b.length < pkt.len) b.push(0x00);
+  return b.slice(0, pkt.len);
+}
+
+function formatHexDump(bytes) {
+  const lines = [];
+  for (let i = 0; i < bytes.length; i += 16) {
+    const chunk  = bytes.slice(i, i + 16);
+    const offset = i.toString(16).padStart(4, '0');
+    const left   = chunk.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    const right  = chunk.slice(8).map(b  => b.toString(16).padStart(2, '0')).join(' ');
+    const hexStr = right ? left + '  ' + right : left;
+    const ascii  = chunk.map(b => (b >= 32 && b < 127) ? String.fromCharCode(b) : '.').join('');
+    lines.push(offset + '   ' + hexStr.padEnd(48) + '   ' + ascii);
+  }
+  return lines.join('\n');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ── Confirm button ──────────────────────────────────── */
+document.getElementById('confirm-btn').addEventListener('click', function () {
+  if (this.disabled) return;
+  this.disabled = true;
+  this.textContent = '✓ Análise Confirmada!';
+
+  award('closing', 100, 'Lab concluído! Análise completa!');
+  setProgStep(3, 'done');
+
+  const banner  = document.getElementById('lab-complete');
+  const lcScore = document.getElementById('lc-score-val');
+  if (banner && lcScore) {
+    lcScore.textContent = totalScore + ' pts';
+    banner.style.display = 'block';
+    banner.offsetHeight;
+    banner.classList.add('banner-visible');
+    setTimeout(() => banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
+  }
+});
+
+})();
+</script>
+</body>
+</html>
