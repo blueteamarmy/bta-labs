@@ -351,6 +351,8 @@
       display: flex; align-items: center; justify-content: center;
       padding: 20px;
     }
+    /* display:flex acima vence o estilo padrão do atributo hidden; esta regra restaura o comportamento correto */
+    #timeline-modal[hidden] { display: none; }
 
     .modal-box {
       background: var(--bg2);
