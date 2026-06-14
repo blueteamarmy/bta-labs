@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTA — Forensic Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Exo+2:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #060a12;
+      --bg2:    #090e1a;
+      --bg3:    #0d1525;
+      --card:   #0f1c30;
+      --blue:   #1e90ff;
+      --cyan:   #00e5ff;
+      --green:  #00e676;
+      --orange: #ff9100;
+      --red:    #ff1744;
+      --yellow: #febc2e;
+      --white:  #e8f0fe;
+      --dim:    #8eaac8;
+      --border: #1a2a4a;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Exo 2', sans-serif;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .hdr-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+
+    .hdr-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 17px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    .hdr-meta {
+      margin-left: auto;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; color: var(--dim);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 3px 9px; border-radius: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px;
+    }
+
+    /* ── Toolbar ─────────────────────────────────────────────── */
+    .toolbar {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 16px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      flex: 1; min-width: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 5px 10px;
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      outline: none; transition: border-color 0.2s;
+    }
+    #search-input:focus { border-color: var(--blue); }
+
+    .filter-group { display: flex; gap: 4px; }
+
+    .flt-btn {
+      background: transparent;
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--dim); padding: 4px 11px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .flt-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .flt-btn.active-all  { border-color: var(--dim); color: var(--white); background: rgba(255,255,255,.06); }
+    .flt-btn.active-suspect  { border-color: var(--yellow); color: var(--yellow); background: rgba(254,188,46,.1); }
+    .flt-btn.active-critical { border-color: var(--red); color: var(--red); background: rgba(255,23,68,.1); }
+
+    .tb-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+
+    .export-btn {
+      background: transparent;
+      border: 1px solid var(--cyan); border-radius: 4px;
+      color: var(--cyan); padding: 4px 13px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .export-btn:hover { background: rgba(0,229,255,.1); }
+
+    #file-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+
+    /* ── Main split ─────────────────────────────────────────── */
+    .main {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* ── Tree column ─────────────────────────────────────────── */
+    .tree-col {
+      width: 35%; min-width: 220px; max-width: 420px;
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden; flex-shrink: 0;
+    }
+
+    .breadcrumb {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      padding: 5px 12px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; color: var(--dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+    .breadcrumb span { color: var(--cyan); }
+
+    .tree-scroll {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 6px 0;
+    }
+    .tree-scroll::-webkit-scrollbar { width: 5px; }
+    .tree-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Tree items */
+    .t-row {
+      display: flex; align-items: center; gap: 4px;
+      padding: 3px 10px;
+      cursor: pointer;
+      user-select: none;
+      border-left: 2px solid transparent;
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+    .t-row:hover { background: rgba(30,144,255,.07); }
+
+    .t-row.t-file.selected {
+      background: rgba(0,229,255,.1) !important;
+      border-left-color: var(--cyan);
+    }
+    .t-row.t-file.critical { background: rgba(255,23,68,.05); }
+    .t-row.t-file.critical:hover { background: rgba(255,23,68,.12); }
+    .t-row.t-file.suspect { background: rgba(254,188,46,.05); }
+    .t-row.t-file.suspect:hover { background: rgba(254,188,46,.1); }
+
+    .t-arrow {
+      font-size: 7px; color: var(--dim);
+      width: 10px; flex-shrink: 0;
+      display: inline-block;
+      transition: transform 0.15s;
+    }
+    .t-arrow.open { transform: rotate(90deg); }
+    .t-arrow.invis { visibility: hidden; }
+
+    .t-ic { font-size: 12px; flex-shrink: 0; }
+    .t-nm { font-family: 'Share Tech Mono', monospace; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+    .t-nm.dim { color: var(--dim); }
+
+    .t-hidden { display: none !important; }
+
+    /* ── Detail column ───────────────────────────────────────── */
+    .detail-col {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+    }
+    .detail-col::-webkit-scrollbar { width: 6px; }
+    .detail-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .no-sel {
+      height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; color: var(--dim);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    }
+    .no-sel-icon { font-size: 40px; opacity: 0.3; }
+
+    /* Detail sections */
+    .detail-wrap { padding: 0 0 24px; }
+
+    .detail-hdr {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 18px;
+      display: flex; align-items: center; gap: 10px;
+      position: sticky; top: 0; z-index: 2;
+    }
+
+    .detail-hdr-icon { font-size: 18px; flex-shrink: 0; }
+
+    .detail-hdr-info { flex: 1; }
+
+    .detail-filename {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 15px; color: var(--white); font-weight: bold;
+    }
+
+    .detail-path {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; color: var(--dim); margin-top: 1px;
+    }
+
+    .status-pill {
+      padding: 3px 11px; border-radius: 12px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .pill-normal   { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid rgba(0,230,118,.35); }
+    .pill-suspect  { background: rgba(254,188,46,.15); color: var(--yellow); border: 1px solid rgba(254,188,46,.35); }
+    .pill-critical { background: rgba(255,23,68,.2); color: #ff6b7a; border: 1px solid rgba(255,23,68,.4); }
+
+    .dsec {
+      padding: 14px 18px 0;
+    }
+
+    .dsec-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; font-weight: 700;
+      color: var(--dim); letter-spacing: 1px; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 5px; margin-bottom: 10px;
+    }
+
+    /* MAC table */
+    .mac-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .mac-table td {
+      padding: 4px 8px;
+      font-size: 11px; vertical-align: middle;
+    }
+    .mac-table tr { border-bottom: 1px solid rgba(26,42,74,.4); }
+    .mac-label {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--dim); width: 130px; flex-shrink: 0;
+    }
+    .mac-value {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--white);
+    }
+    .mac-value.hash { font-size: 10px; color: var(--dim); word-break: break-all; }
+    .mac-flag {
+      font-size: 10px; font-weight: bold; padding-left: 10px; white-space: nowrap;
+    }
+    .mac-flag.warn-future { color: var(--red); }
+    .mac-flag.warn-atime  { color: var(--yellow); }
+    .mac-flag.warn-size   { color: var(--yellow); }
+
+    .mac-row-hl-red  td { background: rgba(255,23,68,.08); }
+    .mac-row-hl-yel  td { background: rgba(254,188,46,.07); }
+
+    /* Anomaly badge */
+    .anomaly-badge {
+      display: flex; gap: 12px; align-items: flex-start;
+      border-radius: 6px; padding: 12px 14px;
+      margin-top: 2px;
+    }
+    .anomaly-badge.normal   { background: rgba(0,230,118,.07); border: 1px solid rgba(0,230,118,.2); }
+    .anomaly-badge.suspect  { background: rgba(254,188,46,.08); border: 1px solid rgba(254,188,46,.25); }
+    .anomaly-badge.critical { background: rgba(255,23,68,.1);  border: 1px solid rgba(255,23,68,.3); }
+
+    .anomaly-icon { font-size: 20px; flex-shrink: 0; }
+
+    .anomaly-level {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .anomaly-badge.normal   .anomaly-level { color: var(--green); }
+    .anomaly-badge.suspect  .anomaly-level { color: var(--yellow); }
+    .anomaly-badge.critical .anomaly-level { color: #ff6b7a; }
+
+    .anomaly-reason {
+      font-size: 12px; line-height: 1.6; color: var(--white);
+    }
+
+    /* Preview */
+    .preview-box {
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 5px;
+      max-height: 220px; overflow: auto;
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    }
+    .preview-box::-webkit-scrollbar { width: 4px; }
+    .preview-box::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .pv-lines { display: table; width: 100%; }
+    .pv-line  { display: table-row; }
+    .pv-line:hover .pv-n, .pv-line:hover .pv-c { background: rgba(30,144,255,.06); }
+    .pv-n {
+      display: table-cell;
+      width: 36px; min-width: 36px;
+      text-align: right; padding: 1px 10px 1px 8px;
+      color: var(--dim); border-right: 1px solid var(--border);
+      user-select: none; vertical-align: top;
+    }
+    .pv-c {
+      display: table-cell;
+      padding: 1px 10px; white-space: pre; vertical-align: top;
+      color: var(--white);
+    }
+
+    .pv-empty {
+      padding: 16px; color: var(--dim); text-align: center; font-style: italic;
+    }
+
+    /* Binary strings */
+    .strings-wrap { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .str {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 3px;
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    }
+    .str-sus  { background: rgba(255,23,68,.15); color: #ff6b7a; border: 1px solid rgba(255,23,68,.3); }
+    .str-warn { background: rgba(254,188,46,.12); color: #febc2e; border: 1px solid rgba(254,188,46,.3); }
+    .str-norm { background: rgba(26,42,74,.6); color: var(--dim); border: 1px solid var(--border); }
+
+    /* ── Timeline modal ──────────────────────────────────────── */
+    #timeline-modal {
+      position: fixed; inset: 0;
+      background: rgba(6,10,18,.88);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--bg2);
+      border: 1px solid var(--blue);
+      border-radius: 8px;
+      width: min(860px, 100%);
+      max-height: 82vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 0 40px rgba(30,144,255,.2);
+    }
+
+    .modal-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3); border-radius: 8px 8px 0 0;
+    }
+
+    .modal-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1px;
+    }
+
+    .modal-close {
+      background: transparent; border: none;
+      color: var(--dim); font-size: 18px; cursor: pointer;
+      padding: 0 4px; transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--white); }
+
+    .modal-body {
+      flex: 1; overflow-y: auto; padding: 14px 18px;
+    }
+    .modal-body::-webkit-scrollbar { width: 6px; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .tl-table { width: 100%; border-collapse: collapse; }
+    .tl-table th {
+      background: var(--bg3); padding: 6px 10px;
+      text-align: left; font-size: 11px;
+      font-family: 'Share Tech Mono', monospace; color: var(--cyan);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0;
+    }
+    .tl-table td {
+      padding: 5px 10px; font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; border-bottom: 1px solid rgba(26,42,74,.4);
+    }
+    .tl-table tr.tl-normal   td:first-child { border-left: 3px solid var(--green); }
+    .tl-table tr.tl-suspect  td:first-child { border-left: 3px solid var(--yellow); }
+    .tl-table tr.tl-critical td:first-child { border-left: 3px solid var(--red); }
+    .tl-table tr.tl-critical { background: rgba(255,23,68,.05); }
+    .tl-table tr.tl-suspect  { background: rgba(254,188,46,.04); }
+    .tl-table tr:hover td    { background: rgba(30,144,255,.06); }
+    .tl-future { color: var(--red); font-weight: bold; }
+
+    @media (max-width: 680px) {
+      .tree-col { width: 45%; }
+      .hdr-meta { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-icon">🔬</div>
+  <div>
+    <div class="hdr-title">Forensic Explorer</div>
+  </div>
+  <div class="hdr-meta" id="hdr-meta">Carregando…</div>
+</header>
+
+<div class="toolbar">
+  <input id="search-input" type="search" placeholder="🔍  Buscar arquivo…" autocomplete="off" />
+  <div class="filter-group">
+    <button class="flt-btn active-all" data-f="all">Todos</button>
+    <button class="flt-btn" data-f="suspect">🟡 Suspeitos</button>
+    <button class="flt-btn" data-f="critical">🔴 Críticos</button>
+  </div>
+  <div class="tb-sep"></div>
+  <button class="export-btn" id="export-btn">📅 Exportar Timeline</button>
+  <span id="file-count"></span>
+</div>
+
+<div class="main">
+  <div class="tree-col">
+    <div class="breadcrumb" id="breadcrumb">/ <span>raiz do sistema</span></div>
+    <div class="tree-scroll" id="tree-root"></div>
+  </div>
+  <div class="detail-col" id="detail-col">
+    <div class="no-sel">
+      <div class="no-sel-icon">🗂</div>
+      <div>Selecione um arquivo para ver os detalhes forenses</div>
+    </div>
+  </div>
+</div>
+
+<div id="timeline-modal" hidden>
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-title">📅 Timeline por M-Time (Modified)</span>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="timeline-body"></div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  /* ── Load data ─────────────────────────────────────────── */
+  const dataUrl = new URLSearchParams(location.search).get('data') || 'image.json';
+  let imgMeta, treeRoot;
+  try {
+    const r = await fetch(dataUrl);
+    const j = await r.json();
+    imgMeta  = j.image;
+    treeRoot = j.tree;
+  } catch (e) {
+    document.getElementById('hdr-meta').textContent = 'Erro ao carregar imagem';
+    return;
+  }
+
+  document.getElementById('hdr-meta').textContent =
+    `${imgMeta.name}  ·  ${imgMeta.os}  ·  ${imgMeta.size_gb} GB  ·  Adquirida: ${imgMeta.acquired.replace('T',' ')}  ·  Caso: ${imgMeta.case}`;
+
+  /* ── Preprocess tree: assign IDs, build flat file list ── */
+  const allFiles = [];
+  let   nodeId   = 0;
+  const openDirs = new Set();
+
+  const INIT_OPEN_PATHS = new Set(['/', '/etc', '/tmp', '/var', '/var/log', '/home', '/home/deployer']);
+
+  function preprocess(node, parentPath) {
+    node._id   = nodeId++;
+    node._path = (parentPath === '' && node.name === '/') ? '/' :
+                  parentPath === '/' ? '/' + node.name : parentPath + '/' + node.name;
+
+    if (node.type === 'dir') {
+      if (INIT_OPEN_PATHS.has(node._path)) openDirs.add(node._id);
+      (node.children || []).forEach(c => preprocess(c, node._path));
+    } else {
+      node._fi = allFiles.length;
+      allFiles.push(node);
+    }
+  }
+  preprocess(treeRoot, '');
+
+  /* ── State ─────────────────────────────────────────────── */
+  let activeFilter = 'all';
+  let searchQuery  = '';
+  let selectedFi   = -1;
+
+  /* ── Build tree HTML (once) ────────────────────────────── */
+  function buildTreeHtml(node, depth) {
+    const indent = depth * 14;
+    if (node.type === 'dir') {
+      const isOpen = openDirs.has(node._id);
+      const children = (node.children || []).map(c => buildTreeHtml(c, depth + 1)).join('');
+      return `
+        <div class="t-dir" data-id="${node._id}">
+          <div class="t-row t-dir-row" style="padding-left:${8 + indent}px"
+               data-action="toggle" data-id="${node._id}">
+            <span class="t-arrow ${isOpen ? 'open' : ''}" id="da${node._id}">▶</span>
+            <span class="t-ic">📁</span>
+            <span class="t-nm dim">${esc(node.name === '/' ? '/ (raiz)' : node.name)}</span>
+          </div>
+          <div id="dc${node._id}" ${isOpen ? '' : 'hidden'}>${children}</div>
+        </div>`;
+    } else {
+      const icon = { critical:'🔴', suspect:'🟡', normal:'📄' }[node.status] || '📄';
+      return `
+        <div class="t-row t-file ${node.status}" style="padding-left:${8 + indent}px"
+             id="tf${node._fi}"
+             data-fi="${node._fi}" data-name="${esc(node.name)}" data-status="${node.status}"
+             data-action="file">
+          <span class="t-arrow invis">▶</span>
+          <span class="t-ic">${icon}</span>
+          <span class="t-nm">${esc(node.name)}</span>
+        </div>`;
+    }
+  }
+
+  document.getElementById('tree-root').innerHTML = buildTreeHtml(treeRoot, 0);
+  updateCount();
+
+  /* ── Event delegation on tree ──────────────────────────── */
+  document.getElementById('tree-root').addEventListener('click', e => {
+    const row = e.target.closest('[data-action]');
+    if (!row) return;
+    if (row.dataset.action === 'toggle') toggleDir(parseInt(row.dataset.id));
+    else if (row.dataset.action === 'file') selectFile(parseInt(row.dataset.fi));
+  });
+
+  function toggleDir(id) {
+    const children = document.getElementById(`dc${id}`);
+    const arrow    = document.getElementById(`da${id}`);
+    if (!children) return;
+    const opening  = children.hidden;
+    children.hidden = !opening;
+    arrow && arrow.classList.toggle('open', opening);
+    opening ? openDirs.add(id) : openDirs.delete(id);
+  }
+
+  /* ── Select file → detail panel ───────────────────────── */
+  function selectFile(fi) {
+    const file = allFiles[fi];
+    if (!file) return;
+    selectedFi = fi;
+
+    /* Highlight in tree */
+    document.querySelectorAll('.t-file.selected').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById(`tf${fi}`);
+    if (el) el.classList.add('selected');
+
+    /* Breadcrumb */
+    const parts = file._path.split('/').filter(Boolean);
+    document.getElementById('breadcrumb').innerHTML =
+      '/ ' + parts.map((p, i) =>
+        i === parts.length - 1
+          ? `<span>${esc(p)}</span>`
+          : esc(p) + ' / '
+      ).join('');
+
+    /* Render detail */
+    document.getElementById('detail-col').innerHTML = renderDetail(file);
+  }
+
+  /* ── Render detail panel ───────────────────────────────── */
+  function renderDetail(file) {
+    const m = file.meta;
+    const anomalies = detectAnomalies(m, imgMeta.acquired);
+    const level = file.anomaly.level;
+    const icon  = { critical:'🔴', suspect:'🟡', normal:'🟢' }[level] || '📄';
+    const pillCls = `pill-${level}`;
+    const pillTxt = { critical:'CRÍTICO', suspect:'SUSPEITO', normal:'NORMAL' }[level];
+
+    /* Timestamp rows */
+    function tsRow(label, key, flagKey, flagText, flagCls) {
+      const hlCls = anomalies.has(flagKey) ? (flagKey === 'mtime' ? 'mac-row-hl-red' : 'mac-row-hl-yel') : '';
+      const flagHtml = anomalies.has(flagKey)
+        ? `<td class="mac-flag ${flagCls}">${flagText}</td>`
+        : '<td></td>';
+      return `<tr class="${hlCls}">
+        <td class="mac-label">${label}</td>
+        <td class="mac-value">${fmtDate(m[key])}</td>
+        ${flagHtml}
+      </tr>`;
+    }
+
+    const macHtml = `
+      <table class="mac-table">
+        ${tsRow('M — Modified', 'mtime', 'mtime', '⚠ FUTURO', 'warn-future')}
+        ${tsRow('A — Accessed', 'atime', 'atime', '⚠ ANTES DO MTIME', 'warn-atime')}
+        ${tsRow('C — Changed',  'ctime', 'ctime', '', '')}
+        <tr ${anomalies.has('size') ? 'class="mac-row-hl-yel"' : ''}>
+          <td class="mac-label">Tamanho</td>
+          <td class="mac-value">${fmtSize(m.size)}</td>
+          <td class="mac-flag ${anomalies.has('size') ? 'warn-size' : ''}">${anomalies.has('size') ? '⚠ VAZIO' : ''}</td>
+        </tr>
+        <tr><td class="mac-label">Permissões</td><td class="mac-value" colspan="2">${esc(m.permissions)}</td></tr>
+        <tr><td class="mac-label">Owner / Group</td><td class="mac-value" colspan="2">${esc(m.owner)} / ${esc(m.group)}</td></tr>
+        <tr><td class="mac-label">Inode</td><td class="mac-value" colspan="2">${m.inode}</td></tr>
+        <tr><td class="mac-label">MD5</td><td class="mac-value hash" colspan="2">${esc(m.md5)}</td></tr>
+        <tr><td class="mac-label">SHA256</td><td class="mac-value hash" colspan="2">${esc(m.sha256)}</td></tr>
+      </table>`;
+
+    /* Preview */
+    let previewHtml = '';
+    const pv = file.preview;
+    if (pv.type === 'text') {
+      if (!pv.content) {
+        previewHtml = `<div class="pv-empty">[arquivo vazio — 0 bytes]</div>`;
+      } else {
+        const lines = pv.content.split('\n');
+        previewHtml = `<div class="pv-lines">${
+          lines.map((l, i) =>
+            `<div class="pv-line"><span class="pv-n">${i + 1}</span><span class="pv-c">${esc(l)}</span></div>`
+          ).join('')
+        }</div>`;
+      }
+    } else if (pv.type === 'binary') {
+      previewHtml = `<div class="strings-wrap">${
+        (pv.strings || []).map(s => {
+          const cls = isSuspicious(s) ? 'str-sus' : isWarning(s) ? 'str-warn' : 'str-norm';
+          return `<span class="str ${cls}">${esc(s)}</span>`;
+        }).join('')
+      }</div>`;
+    } else {
+      previewHtml = `<div class="pv-empty">[imagem — visualização não disponível]</div>`;
+    }
+
+    return `
+      <div class="detail-wrap">
+        <div class="detail-hdr">
+          <span class="detail-hdr-icon">${icon}</span>
+          <div class="detail-hdr-info">
+            <div class="detail-filename">${esc(file.name)}</div>
+            <div class="detail-path">${esc(file._path)}</div>
+          </div>
+          <span class="status-pill ${pillCls}">${pillTxt}</span>
+        </div>
+
+        <div class="dsec">
+          <div class="dsec-title">MAC Times &amp; Metadados</div>
+          ${macHtml}
+        </div>
+
+        <div class="dsec" style="margin-top:12px">
+          <div class="dsec-title">Indicador de Anomalia</div>
+          <div class="anomaly-badge ${level}">
+            <span class="anomaly-icon">${icon}</span>
+            <div>
+              <div class="anomaly-level">${pillTxt}</div>
+              <div class="anomaly-reason">${esc(file.anomaly.reason)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dsec" style="margin-top:12px">
+          <div class="dsec-title">${pv.type === 'binary' ? 'Strings Extraídas (executável)' : 'Preview do Conteúdo'}</div>
+          <div class="preview-box">${previewHtml}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Anomaly detection ─────────────────────────────────── */
+  function detectAnomalies(m, acquired) {
+    const set = new Set();
+    const mtime    = new Date(m.mtime);
+    const atime    = new Date(m.atime);
+    const acqDate  = new Date(acquired);
+    if (mtime > acqDate) set.add('mtime');
+    if (atime < mtime && (mtime - atime) > 60000) set.add('atime');
+    if (m.size === 0) set.add('size');
+    return set;
+  }
+
+  /* ── String classification ─────────────────────────────── */
+  function isSuspicious(s) {
+    return /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(s) ||
+      /gate\.php|cmd=|UPX!|\/bin\/sh|\.cache_update|PROT_EXEC/.test(s);
+  }
+  function isWarning(s) {
+    return /\/tmp\/|curl|libcurl|\/bin\/sh/.test(s) || s === 'ELF';
+  }
+
+  /* ── Filters ───────────────────────────────────────────── */
+  document.querySelectorAll('.flt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.dataset.f;
+      document.querySelectorAll('.flt-btn').forEach(b => {
+        b.className = `flt-btn${b.dataset.f === activeFilter ? ' active-' + b.dataset.f : ''}`;
+      });
+      applyFilters();
+    });
+  });
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value.trim().toLowerCase();
+    applyFilters();
+  });
+
+  function applyFilters() {
+    const hasFilter = searchQuery || activeFilter !== 'all';
+
+    /* Show/hide files */
+    document.querySelectorAll('.t-file').forEach(el => {
+      const name   = el.dataset.name.toLowerCase();
+      const status = el.dataset.status;
+      const mQ = !searchQuery || name.includes(searchQuery);
+      const mS = activeFilter === 'all' || status === activeFilter;
+      el.classList.toggle('t-hidden', !(mQ && mS));
+    });
+
+    /* Show/hide dirs — hide dirs with no visible children when filter active */
+    document.querySelectorAll('.t-dir').forEach(dir => {
+      if (!hasFilter) {
+        dir.classList.remove('t-hidden');
+        return;
+      }
+      const hasVisible = !!dir.querySelector('.t-file:not(.t-hidden)');
+      dir.classList.toggle('t-hidden', !hasVisible);
+      /* Auto-expand dirs with matching children */
+      if (hasVisible) {
+        const id = parseInt(dir.dataset.id);
+        const dc = document.getElementById(`dc${id}`);
+        const da = document.getElementById(`da${id}`);
+        if (dc && dc.hidden) {
+          dc.hidden = false;
+          da && da.classList.add('open');
+          openDirs.add(id);
+        }
+      }
+    });
+
+    updateCount();
+  }
+
+  function updateCount() {
+    const total   = allFiles.length;
+    const visible = document.querySelectorAll('.t-file:not(.t-hidden)').length;
+    document.getElementById('file-count').textContent =
+      total === visible ? `${total} arquivos` : `${visible} de ${total} arquivos`;
+  }
+
+  /* ── Export timeline ───────────────────────────────────── */
+  document.getElementById('export-btn').addEventListener('click', showTimeline);
+  document.getElementById('modal-close').addEventListener('click', closeTimeline);
+  document.getElementById('timeline-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('timeline-modal')) closeTimeline();
+  });
+
+  function showTimeline() {
+    const sorted = [...allFiles].sort((a, b) =>
+      new Date(a.meta.mtime) - new Date(b.meta.mtime)
+    );
+    const acqDate = new Date(imgMeta.acquired);
+
+    const rows = sorted.map(f => {
+      const mtime    = new Date(f.meta.mtime);
+      const isFuture = mtime > acqDate;
+      const icon     = { critical:'🔴', suspect:'🟡', normal:'🟢' }[f.status];
+      const label    = { critical:'Crítico', suspect:'Suspeito', normal:'Normal' }[f.status];
+      return `<tr class="tl-${f.status}">
+        <td class="${isFuture ? 'tl-future' : ''}">${fmtDate(f.meta.mtime)}${isFuture ? ' ★' : ''}</td>
+        <td>${esc(f._path)}</td>
+        <td>${icon} ${label}</td>
+        <td>${fmtSize(f.meta.size)}</td>
+        <td>${esc(f.meta.permissions)}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('timeline-body').innerHTML = `
+      <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:10px">
+        Imagem: ${esc(imgMeta.name)} · Adquirida: ${imgMeta.acquired.replace('T',' ')} · ★ = timestamp posterior à aquisição (FUTURO)
+      </p>
+      <table class="tl-table">
+        <thead><tr><th>M-Time</th><th>Arquivo</th><th>Status</th><th>Tamanho</th><th>Permissões</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+    document.getElementById('timeline-modal').hidden = false;
+  }
+
+  function closeTimeline() {
+    document.getElementById('timeline-modal').hidden = true;
+  }
+
+  /* ── Helpers ───────────────────────────────────────────── */
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtDate(iso) {
+    return iso ? iso.replace('T', ' ') : '—';
+  }
+
+  function fmtSize(bytes) {
+    if (bytes === 0) return '0 bytes (vazio)';
+    if (bytes < 1024) return `${bytes} bytes`;
+    if (bytes < 1048576) return `${(bytes/1024).toFixed(1)} KB (${bytes.toLocaleString()} bytes)`;
+    return `${(bytes/1048576).toFixed(1)} MB (${bytes.toLocaleString()} bytes)`;
+  }
+})();
+</script>
+</body>
+</html>

