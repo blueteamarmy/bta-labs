@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Blue Team Army — Lab 04: Plantão no SOC. Console SIEM simulado com triagem de alertas." />
+  <title>LAB 04 — Plantão no SOC | Blue Team Army</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0a0e1a;
+      --navy-mid:   #0d1525;
+      --navy-lite:  #111e38;
+      --border:     #1a2a4a;
+      --border2:    #1a3060;
+      --cyan:       #00e5ff;
+      --blue:       #4a9eff;
+      --green:      #00e676;
+      --yellow:     #febc2e;
+      --red:        #ff1744;
+      --orange:     #ff9100;
+      --text:       #c8d8f0;
+      --text-dim:   #a0c4e0;
+      --text-faint: #2a4a7a;
+      --dim:        #8eaac8;
+      --white:      #e8f4ff;
+    }
+
+    html, body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Token Gate ──────────────────────────────────────── */
+    #token-gate {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--navy); z-index: 999;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; text-align: center;
+    }
+    .show-gate #token-gate { display: flex; }
+    .tg-logo  { margin-bottom: 28px; }
+    .tg-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(18px,3.5vw,26px); font-weight: 700;
+      color: var(--white); margin-bottom: 8px;
+    }
+    .tg-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px; color: var(--text-dim); letter-spacing: .5px; margin-bottom: 28px;
+    }
+    .tg-input {
+      display: block; background: var(--navy-mid); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; padding: 10px 16px; border-radius: 6px; outline: none;
+      width: 100%; max-width: 340px; text-align: center; letter-spacing: 2px;
+      transition: border-color .2s; margin-bottom: 12px;
+    }
+    .tg-input:focus { border-color: var(--cyan); }
+    .tg-input.tg-shake { border-color: var(--red); animation: tg-shake .3s ease; }
+    @keyframes tg-shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+    .tg-btn {
+      display: block; font-family: 'Rajdhani', sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); background: rgba(0,229,255,.06); border: 1.5px solid var(--cyan);
+      padding: 10px 32px; border-radius: 6px; cursor: pointer; transition: background .15s;
+      width: 100%; max-width: 340px; margin-bottom: 14px;
+    }
+    .tg-btn:hover { background: rgba(0,229,255,.12); }
+    .tg-err-msg {
+      font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--red);
+      min-height: 16px; opacity: 0; transition: opacity .2s;
+    }
+    .tg-err-msg.visible { opacity: 1; }
+
+    /* ── HUD ─────────────────────────────────────────────── */
+    #hud {
+      position: fixed; top: 14px; right: 18px;
+      background: var(--navy-mid); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 7px 14px 8px;
+      z-index: 200; text-align: right; pointer-events: none;
+      box-shadow: 0 2px 16px rgba(0,0,0,.4); min-width: 130px;
+    }
+    .hud-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 9px; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-faint); display: block;
+    }
+    .hud-val {
+      font-family: 'Exo 2', sans-serif; font-size: 18px;
+      font-weight: 700; color: var(--cyan); line-height: 1.15;
+    }
+    .hud-val .hud-tot { font-size: 11px; color: var(--dim); font-weight: 400; }
+    .hud-divider { border-top: 1px solid var(--border); margin: 5px 0 4px; }
+    .hud-sub {
+      font-family: 'Exo 2', sans-serif; font-size: 14px;
+      font-weight: 700; color: var(--blue); line-height: 1.15;
+    }
+    .hud-sub .hud-tot { font-size: 11px; color: var(--dim); font-weight: 400; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .flag-toast {
+      display: none; position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      border: 2px solid var(--cyan); background: #0b1d3a;
+      border-radius: 10px; padding: 22px 32px;
+      text-align: center; z-index: 500;
+      pointer-events: none; min-width: 230px; max-width: 320px;
+    }
+    .flag-toast.show { display: block; animation: popin .28s ease; }
+    .flag-toast.green  { border-color: var(--green);  background: #041408; }
+    .flag-toast.yellow { border-color: var(--yellow); background: #140f00; }
+    .flag-toast.red    { border-color: var(--red);    background: #140005; }
+    @keyframes popin {
+      from { transform: translate(-50%,-50%) scale(.82); opacity: 0; }
+      to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+    }
+    .ft-icon { font-size: 26px; margin-bottom: 6px; }
+    .ft-pts  {
+      font-family: 'Exo 2', sans-serif; font-size: 28px;
+      color: var(--cyan); font-weight: 700; margin: 4px 0;
+    }
+    .flag-toast.green  .ft-pts { color: var(--green); }
+    .flag-toast.yellow .ft-pts { color: var(--yellow); }
+    .flag-toast.red    .ft-pts { color: var(--red); }
+    .ft-label { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); }
+    .ft-msg   { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--dim); margin-top: 4px; line-height: 1.5; }
+
+    /* ── Page ────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 16px 60px; gap: 20px;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .site-header {
+      width: 100%; max-width: 980px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 4px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-hex { width: 40px; height: 40px; flex-shrink: 0; }
+    .logo-text {
+      font-family: 'Exo 2', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1.5px; line-height: 1.1;
+    }
+    .logo-sub {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .header-link {
+      font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue);
+      text-decoration: none; letter-spacing: 1px;
+      border: 1px solid var(--border); padding: 6px 14px; border-radius: 4px;
+      transition: border-color .15s, color .15s;
+    }
+    .header-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      width: 100%; max-width: 980px;
+      text-align: center; padding: 4px 0 2px;
+    }
+    .hero-tag {
+      display: inline-block; font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cyan); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 2px; margin-bottom: 12px;
+    }
+    .hero-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(22px, 4vw, 34px); font-weight: 700;
+      color: var(--white); line-height: 1.2; margin-bottom: 6px;
+    }
+    .hero-title span { color: var(--cyan); }
+    .hero-subtitle {
+      font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+
+    /* ── Briefing Terminal ───────────────────────────────── */
+    .briefing-terminal {
+      width: 100%; max-width: 980px;
+      background: #050810; border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .bt-titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+    }
+    .bt-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .bt-dot-r { background: var(--red);    opacity: .7; }
+    .bt-dot-y { background: var(--yellow); opacity: .7; }
+    .bt-dot-g { background: var(--green);  opacity: .7; }
+    .bt-title {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--dim); margin-left: 6px; letter-spacing: .5px;
+    }
+    .bt-body {
+      padding: 16px 20px;
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      line-height: 1.8; color: var(--text-dim);
+    }
+    .bt-prompt { color: var(--blue); user-select: none; }
+    .bt-cmd    { color: var(--cyan); }
+    .bt-head   { color: var(--green); font-weight: bold; display: block; margin: 4px 0; }
+    .bt-body p { margin-bottom: 0; }
+    .bt-cursor {
+      display: inline-block; width: 8px; height: 14px;
+      background: var(--cyan); vertical-align: middle; margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── SIEM Console ────────────────────────────────────── */
+    .siem-card {
+      width: 100%; max-width: 980px;
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--navy);
+    }
+    .siem-header {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 9px 16px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+    }
+    .siem-icon { font-size: 14px; }
+    .siem-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim);
+      flex: 1;
+    }
+    .siem-live {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--green); animation: pulse-live 2s ease-in-out infinite;
+    }
+    @keyframes pulse-live { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+    .siem-analyst {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--dim); background: var(--navy); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 3px;
+    }
+
+    .siem-body {
+      display: flex;
+      height: clamp(500px, 72vh, 680px);
+    }
+
+    /* ── Alert Queue ─────────────────────────────────────── */
+    .alert-queue {
+      width: 40%; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .aq-header {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--dim);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .aq-count {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--cyan); background: rgba(0,229,255,.08);
+      padding: 1px 7px; border-radius: 3px;
+    }
+    .aq-list {
+      flex: 1; overflow-y: auto;
+    }
+    .aq-list::-webkit-scrollbar { width: 4px; }
+    .aq-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .alert-item {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(26,42,74,.5);
+      border-left: 3px solid transparent;
+      cursor: pointer; transition: background .12s, border-left-color .15s;
+      position: relative;
+    }
+    .alert-item:hover          { background: rgba(74,158,255,.06); }
+    .alert-item.selected       { background: rgba(0,229,255,.06); border-left-color: var(--cyan); }
+    .alert-item.done           { border-left-color: var(--green); }
+    .alert-item.sev-critical   { border-left-color: var(--red); }
+    .alert-item.sev-critical.selected { border-left-color: var(--cyan); }
+    .alert-item.done.selected  { border-left-color: var(--cyan); }
+
+    .ai-top {
+      display: flex; align-items: center; gap: 7px; margin-bottom: 4px;
+    }
+    .ai-sev-icon { font-size: 12px; flex-shrink: 0; }
+    .ai-id {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--blue); flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ai-status {
+      font-family: 'Rajdhani', sans-serif; font-size: 10px;
+      letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0;
+    }
+    .ai-status.pending  { color: var(--text-faint); }
+    .ai-status.active   { color: var(--blue); }
+    .ai-status.done-ok  { color: var(--green); }
+    .ai-status.done-par { color: var(--yellow); }
+    .ai-status.done-err { color: var(--red); }
+
+    .ai-title {
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--text); margin-bottom: 4px; line-height: 1.3;
+    }
+    .alert-item.selected .ai-title { color: var(--white); }
+
+    .ai-meta {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--dim);
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    }
+    .ai-src  { color: var(--blue); font-weight: 600; }
+    .ai-sep  { color: var(--border2); }
+    .ai-pts  { margin-left: auto; font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; }
+    .ai-pts.green  { color: var(--green); }
+    .ai-pts.yellow { color: var(--yellow); }
+    .ai-pts.red    { color: var(--red); }
+
+    /* ── Triage Panel ────────────────────────────────────── */
+    .triage-panel {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Empty state */
+    .tp-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 32px 24px;
+      color: var(--text-faint);
+    }
+    .tp-empty-icon { font-size: 40px; margin-bottom: 14px; opacity: .5; }
+    .tp-empty-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700;
+      letter-spacing: 1px; color: var(--dim); margin-bottom: 6px;
+    }
+    .tp-empty-sub { font-family: 'Exo 2', sans-serif; font-size: 13px; color: var(--text-faint); }
+
+    /* Alert header in panel */
+    .tp-alert-hdr {
+      flex-shrink: 0;
+      padding: 10px 16px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+    }
+    .tp-sev-badge {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; padding: 2px 9px;
+      border-radius: 3px; flex-shrink: 0; align-self: flex-start; margin-top: 2px;
+    }
+    .tp-sev-badge.sev-critical { background: rgba(255,23,68,.15);  border: 1px solid rgba(255,23,68,.4);  color: var(--red);    }
+    .tp-sev-badge.sev-high     { background: rgba(255,145,0,.15);  border: 1px solid rgba(255,145,0,.4);  color: var(--orange); }
+    .tp-sev-badge.sev-medium   { background: rgba(254,188,46,.12); border: 1px solid rgba(254,188,46,.4); color: var(--yellow); }
+    .tp-sev-badge.sev-low      { background: rgba(142,170,200,.1); border: 1px solid rgba(142,170,200,.3); color: var(--dim);   }
+
+    .tp-hdr-info { flex: 1; min-width: 0; }
+    .tp-alert-id {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--blue); margin-bottom: 2px;
+    }
+    .tp-alert-title {
+      font-family: 'Exo 2', sans-serif; font-size: 15px; font-weight: 700;
+      color: var(--white); margin-bottom: 4px; line-height: 1.3;
+    }
+    .tp-alert-meta {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--dim);
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .tp-meta-src { color: var(--blue); font-weight: 600; }
+
+    /* Panel body scroll */
+    .tp-body {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .tp-body::-webkit-scrollbar { width: 5px; }
+    .tp-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Alert details */
+    .tp-section-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-faint); margin-bottom: 6px;
+    }
+    .tp-details {
+      font-family: 'Exo 2', sans-serif; font-size: 13px;
+      color: var(--text-dim); line-height: 1.6;
+    }
+
+    /* Log snippet */
+    .log-snippet {
+      background: #050810; border: 1px solid var(--border);
+      border-left: 3px solid var(--border2);
+      border-radius: 4px; padding: 10px 14px;
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--text-dim); line-height: 1.7;
+      white-space: pre; overflow-x: auto;
+    }
+    .log-snippet::-webkit-scrollbar { height: 4px; }
+    .log-snippet::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* MITRE badge */
+    .mitre-badge {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: rgba(74,158,255,.06); border: 1px solid rgba(74,158,255,.2);
+      border-radius: 5px; padding: 10px 12px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .mitre-tag {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--blue); background: rgba(74,158,255,.1);
+      border: 1px solid rgba(74,158,255,.3); padding: 1px 7px; border-radius: 3px;
+      white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+    }
+    .mitre-none {
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      color: var(--text-faint); font-style: italic;
+    }
+
+    /* ── Triage Form ─────────────────────────────────────── */
+    .triage-form { display: flex; flex-direction: column; gap: 14px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .radio-group {
+      display: flex; gap: 7px; flex-wrap: wrap;
+    }
+    .radio-opt {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 12px; border: 1px solid var(--border);
+      border-radius: 5px; cursor: pointer; user-select: none;
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--text-dim); transition: border-color .12s, background .12s, color .12s;
+    }
+    .radio-opt:hover { border-color: var(--blue); background: rgba(74,158,255,.05); color: var(--text); }
+    .radio-opt.selected { border-color: var(--cyan); background: rgba(0,229,255,.08); color: var(--cyan); }
+    .radio-dot {
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 1.5px solid currentColor; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .radio-opt.selected .radio-dot::after {
+      content: ''; display: block;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--cyan);
+    }
+
+    .form-select {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text);
+      font-family: 'Exo 2', sans-serif; font-size: 13px;
+      padding: 8px 12px; width: 100%; outline: none; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238eaac8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px; transition: border-color .15s;
+    }
+    .form-select:focus { border-color: var(--cyan); }
+    .form-select option { background: var(--navy-mid); }
+
+    .btn-confirm {
+      font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); background: rgba(0,229,255,.08);
+      border: 1.5px solid var(--cyan); border-radius: 6px;
+      padding: 10px 24px; cursor: pointer; transition: background .15s;
+      align-self: flex-start;
+    }
+    .btn-confirm:hover:not(:disabled) { background: rgba(0,229,255,.16); }
+    .btn-confirm:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ── Triage Result ───────────────────────────────────── */
+    .triage-result { display: flex; flex-direction: column; gap: 12px; }
+
+    .tr-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 6px;
+    }
+    .tr-status.ok   { background: rgba(0,230,118,.1);  border: 1px solid rgba(0,230,118,.3);  }
+    .tr-status.par  { background: rgba(254,188,46,.1); border: 1px solid rgba(254,188,46,.3); }
+    .tr-status.err  { background: rgba(255,23,68,.1);  border: 1px solid rgba(255,23,68,.3);  }
+    .tr-status-icon { font-size: 20px; flex-shrink: 0; }
+    .tr-status-text {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700;
+    }
+    .tr-status.ok  .tr-status-text { color: var(--green); }
+    .tr-status.par .tr-status-text { color: var(--yellow); }
+    .tr-status.err .tr-status-text { color: var(--red); }
+    .tr-pts {
+      margin-left: auto; font-family: 'Exo 2', sans-serif;
+      font-size: 18px; font-weight: 700; flex-shrink: 0;
+    }
+    .tr-status.ok  .tr-pts { color: var(--green); }
+    .tr-status.par .tr-pts { color: var(--yellow); }
+    .tr-status.err .tr-pts { color: var(--red); }
+
+    .tr-compare {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 6px; overflow: hidden;
+    }
+    .tr-compare-hdr {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      padding: 7px 14px;
+      background: #080c18; border-bottom: 1px solid var(--border);
+      font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-faint);
+    }
+    .tr-compare-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      padding: 8px 14px; border-bottom: 1px solid rgba(26,42,74,.5);
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+    }
+    .tr-compare-row:last-child { border-bottom: none; }
+    .tr-field { color: var(--dim); }
+    .tr-user  { color: var(--text-dim); }
+    .tr-user.correct { color: var(--green); }
+    .tr-user.wrong   { color: var(--red); text-decoration: line-through; opacity: .7; }
+    .tr-correct-val  { color: var(--cyan); font-weight: 600; }
+
+    .tr-mitre {
+      display: flex; align-items: flex-start; gap: 9px;
+      padding: 10px 12px;
+      background: rgba(74,158,255,.05); border: 1px solid rgba(74,158,255,.15);
+      border-radius: 5px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── Section wrapper ─────────────────────────────────── */
+    .section-wrap {
+      width: 100%; max-width: 980px;
+      opacity: 0; transform: translateY(24px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .section-wrap.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Closing Section ─────────────────────────────────── */
+    .closing-hdr {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0; padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .closing-icon { font-size: 30px; flex-shrink: 0; line-height: 1; }
+    .closing-title {
+      font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700;
+      color: var(--white); margin-bottom: 4px;
+    }
+    .closing-sub {
+      font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--text-dim);
+    }
+
+    .closing-inner {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 10px 10px; padding: 20px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .summary-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .summary-table th {
+      background: #080c18; color: var(--text-faint);
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; padding: 8px 14px;
+      text-align: left; border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    .summary-table td {
+      padding: 9px 14px; border-bottom: 1px solid rgba(26,42,74,.7);
+      font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-dim);
+      vertical-align: top; line-height: 1.45;
+    }
+    .summary-table td:first-child {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      color: var(--blue); white-space: nowrap; font-weight: 600;
+    }
+    .summary-table .td-title { color: var(--text); font-weight: 600; }
+    .summary-table .td-resp  { color: var(--dim); font-size: 11px; }
+    .summary-table .td-ok   { color: var(--green);  font-weight: 700; }
+    .summary-table .td-par  { color: var(--yellow); font-weight: 700; }
+    .summary-table .td-err  { color: var(--red);    font-weight: 700; }
+    .summary-table .td-pts  { text-align: right; font-weight: 700; white-space: nowrap; }
+    .summary-table .td-pts.green  { color: var(--green); }
+    .summary-table .td-pts.yellow { color: var(--yellow); }
+    .summary-table .td-pts.dim    { color: var(--dim); }
+    .summary-total {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700;
+      text-align: right; padding: 10px 14px;
+      background: #080c18; border-top: 2px solid var(--border);
+      color: var(--cyan);
+    }
+
+    .feedback-box {
+      padding: 14px 18px; border-radius: 6px;
+      font-family: 'Exo 2', sans-serif; font-size: 14px;
+      line-height: 1.6; font-style: italic;
+    }
+    .feedback-box.great  { background: rgba(0,230,118,.08);  border: 1px solid rgba(0,230,118,.25);  color: var(--green); }
+    .feedback-box.good   { background: rgba(254,188,46,.08); border: 1px solid rgba(254,188,46,.25); color: var(--yellow); }
+    .feedback-box.review { background: rgba(255,23,68,.08);  border: 1px solid rgba(255,23,68,.25);  color: #ff8a9b; }
+
+    .lab-complete-banner {
+      background: var(--navy); border: 2px solid var(--cyan);
+      border-radius: 10px; padding: 28px; text-align: center;
+    }
+    .lc-icon  { font-size: 36px; margin-bottom: 8px; }
+    .lc-title { font-family: 'Exo 2', sans-serif; font-size: 22px; font-weight: 700; color: var(--cyan); margin-bottom: 8px; }
+    .lc-score { font-family: 'Exo 2', sans-serif; font-size: 38px; font-weight: 700; color: var(--yellow); margin-bottom: 10px; letter-spacing: 2px; }
+    .lc-msg   { font-family: 'Rajdhani', sans-serif; font-size: 15px; color: var(--text-dim); max-width: 480px; margin: 0 auto; line-height: 1.6; }
+    .lc-back  {
+      display: inline-block; margin-top: 20px;
+      font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      color: var(--green); background: transparent;
+      border: 1px solid var(--green); padding: 10px 28px; border-radius: 5px;
+      text-decoration: none; transition: background .15s;
+    }
+    .lc-back:hover { background: rgba(0,230,118,.08); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .site-footer {
+      width: 100%; max-width: 980px;
+      border-top: 1px solid var(--border); padding-top: 20px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .footer-text { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--text-faint); }
+    .footer-link { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); text-decoration: none; }
+    .footer-link:hover { color: var(--cyan); }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 680px) {
+      .header-link { display: none; }
+      .siem-body { flex-direction: column; height: auto; }
+      .alert-queue { width: 100%; height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+      .triage-panel { min-height: 460px; }
+      #hud { top: auto; bottom: 14px; right: 14px; }
+      .summary-table td:nth-child(3) { display: none; }
+      .summary-table th:nth-child(3) { display: none; }
+    }
+  </style>
+
+  <script>
+    if (localStorage.getItem('bta-lab04-access') === 'BTA-LAB04-2026') {
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      document.documentElement.classList.add('show-gate');
+    }
+  </script>
+</head>
+<body>
+
+<!-- Token Gate -->
+<div id="token-gate" role="dialog" aria-modal="true">
+  <div class="tg-logo">
+    <svg viewBox="0 0 40 46" width="52" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+      <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+    </svg>
+  </div>
+  <h1 class="tg-title">LAB 04 — Acesso Restrito</h1>
+  <p class="tg-sub">Este lab é exclusivo para alunos matriculados.</p>
+  <input type="text" id="token-input" class="tg-input"
+    placeholder="Digite seu token de acesso"
+    autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+  <button type="button" id="token-btn" class="tg-btn">Acessar Lab</button>
+  <p class="tg-err-msg" id="token-err" role="alert">Token inválido.</p>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <span class="hud-label">Pontuação</span>
+  <div class="hud-val"><span id="hud-pts">0</span> <span class="hud-tot">/ 600 pts</span></div>
+  <div class="hud-divider"></div>
+  <span class="hud-label">Alertas triados</span>
+  <div class="hud-sub"><span id="hud-triaged">0</span> <span class="hud-tot">/ 6</span></div>
+</div>
+
+<!-- Toast -->
+<div class="flag-toast" id="flag-toast" role="status" aria-live="polite">
+  <div class="ft-icon" id="toast-icon">🎯</div>
+  <div class="ft-pts" id="toast-pts">+100 pts</div>
+  <div class="ft-label" id="toast-label">Triagem Correta!</div>
+  <div class="ft-msg" id="toast-msg"></div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <a class="logo" href="#">
+      <svg class="logo-hex" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+        <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+        <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+      </svg>
+      <div>
+        <div class="logo-text">BLUE TEAM ARMY</div>
+        <div class="logo-sub">Training Lab</div>
+      </div>
+    </a>
+    <a class="header-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army &rarr;</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-tag">Módulo 4 · Fundamentos de SOC e Triagem de Alertas</div>
+    <h1 class="hero-title">LAB 04 — <span>Plantão no SOC</span></h1>
+    <p class="hero-subtitle">Console SIEM simulado · Triagem de 6 alertas reais</p>
+  </section>
+
+  <!-- Briefing Terminal -->
+  <div class="briefing-terminal" style="width:100%;max-width:980px">
+    <div class="bt-titlebar">
+      <span class="bt-dot bt-dot-r"></span>
+      <span class="bt-dot bt-dot-y"></span>
+      <span class="bt-dot bt-dot-g"></span>
+      <span class="bt-title">SIEM Console v3.2.1 — Analista N1</span>
+    </div>
+    <div class="bt-body">
+      <span><span class="bt-prompt">$</span> <span class="bt-cmd">iniciar-plantao --hora=08:00 --nivel=N1</span></span>
+      <br>
+      <span class="bt-head">TURNO INICIADO — 08:00</span>
+      Você é o <strong style="color:var(--cyan)">analista N1</strong> de plantão. A fila de alertas do SIEM está aberta.<br>
+      Triar cada alerta: classifique, defina prioridade e escolha a ação correta.<br>
+      Respostas erradas geram feedback mas <strong style="color:var(--yellow)">não bloqueiam o progresso</strong>.<br>
+      <br>
+      ALERTAS NA FILA: <strong style="color:var(--orange)">6</strong> &nbsp;·&nbsp; Aguardando triagem<span class="bt-cursor"></span>
+    </div>
+  </div>
+
+  <!-- SIEM Console -->
+  <div class="siem-card">
+    <div class="siem-header">
+      <span class="siem-icon">🔒</span>
+      <span class="siem-title">SIEM Console · Fila de Alertas</span>
+      <span class="siem-live">● LIVE</span>
+      <span class="siem-analyst">Analista: N1</span>
+    </div>
+    <div class="siem-body">
+      <div class="alert-queue">
+        <div class="aq-header">
+          Alertas <span class="aq-count" id="aq-count">6 alertas</span>
+        </div>
+        <div class="aq-list" id="aq-list" role="listbox" aria-label="Fila de alertas"></div>
+      </div>
+      <div class="triage-panel" id="triage-panel"></div>
+    </div>
+  </div>
+
+  <!-- Closing section -->
+  <div class="section-wrap" id="closing-section" style="display:none">
+    <div class="closing-hdr">
+      <div class="closing-icon">📋</div>
+      <div>
+        <h2 class="closing-title">Relatório de Plantão — Turno Encerrado</h2>
+        <p class="closing-sub">Todos os alertas foram triados. Confira seu desempenho.</p>
+      </div>
+    </div>
+    <div class="closing-inner">
+      <table class="summary-table" id="summary-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Sua Resposta</th>
+            <th>Resultado</th>
+            <th style="text-align:right">Pts</th>
+          </tr>
+        </thead>
+        <tbody id="summary-tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="summary-total" id="summary-total">Total: 0 pts</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="feedback-box" id="feedback-box"></div>
+
+      <div class="lab-complete-banner">
+        <div class="lc-icon">🏆</div>
+        <h3 class="lc-title">Plantão Encerrado!</h3>
+        <div class="lc-score" id="lc-score">0 pts</div>
+        <p class="lc-msg">Você completou o turno de analista N1 no SOC. Cada alerta triado é uma habilidade real de blue team.</p>
+        <a class="lc-back" href="https://blueteam.army/courses">&larr; Voltar para o Curso</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span class="footer-text">&copy; 2025 Blue Team Army. Todos os direitos reservados.</span>
+    <a class="footer-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army</a>
+  </footer>
+
+</div><!-- .page -->
+
+<script>
+(function () {
+'use strict';
+
+/* ── Token Gate ──────────────────────────────────────── */
+(function initGate() {
+  const inp = document.getElementById('token-input');
+  const btn = document.getElementById('token-btn');
+  const err = document.getElementById('token-err');
+  if (!inp) return;
+  function tryToken() {
+    if (inp.value.trim() === 'BTA-LAB04-2026') {
+      localStorage.setItem('bta-lab04-access', 'BTA-LAB04-2026');
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      err.classList.add('visible');
+      inp.classList.add('tg-shake');
+      inp.value = '';
+      setTimeout(() => inp.classList.remove('tg-shake'), 400);
+    }
+  }
+  btn.addEventListener('click', tryToken);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryToken(); err.classList.remove('visible'); });
+})();
+
+/* ── Data ────────────────────────────────────────────── */
+const ACTIONS = [
+  { id: 'fechar',                   label: 'Fechar (comportamento esperado)' },
+  { id: 'registrar-monitorar',      label: 'Registrar e monitorar' },
+  { id: 'bloquear-ip-registrar',    label: 'Bloquear IP + registrar' },
+  { id: 'investigar-conta-escalonar', label: 'Investigar conta + escalonar' },
+  { id: 'desabilitar-conta-escalonar', label: 'Desabilitar conta + escalonar imediatamente' },
+  { id: 'isolar-host-escalonar',    label: 'Isolar host + escalonar imediatamente' },
+  { id: 'bloquear-ip-escalonar',    label: 'Bloquear IP + escalonar' },
+];
+
+const SEV = {
+  Critical: { icon: '🔴', cls: 'sev-critical', color: 'var(--red)',    label: 'Critical' },
+  High:     { icon: '🟠', cls: 'sev-high',     color: 'var(--orange)', label: 'High' },
+  Medium:   { icon: '🟡', cls: 'sev-medium',   color: 'var(--yellow)', label: 'Medium' },
+  Low:      { icon: '⚪', cls: 'sev-low',      color: 'var(--dim)',    label: 'Low' },
+};
+
+const SRC_ICON = { Linux: '🐧', Windows: '🪟', Network: '🌐' };
+
+const ALERTS = [
+  {
+    id: 'ALERT-001',
+    title: 'Múltiplas falhas de autenticação SSH',
+    source: 'Linux', sourceDetail: 'auth.log',
+    severity: 'High',
+    timestamp: '2024-11-08 02:17',
+    details: '47 tentativas de login falhadas do IP 10.20.45.113 em 3 minutos contra o usuário root. A última tentativa resultou em acesso bem-sucedido.',
+    logSnippet:
+`Nov 08 02:17:03 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54230 ssh2
+Nov 08 02:17:06 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54231 ssh2
+Nov 08 02:17:09 linux01 sshd[4521]: Failed password for root from 10.20.45.113 port 54232 ssh2
+... (47 tentativas em 3 minutos)
+Nov 08 02:17:31 linux01 sshd[4521]: Accepted password for root from 10.20.45.113 port 54278 ssh2`,
+    mitre: 'T1110 — Brute Force: tentativa sistemática de adivinhar credenciais via força bruta até obter acesso.',
+    correct: { classification: 'TP', priority: 'Alta', action: 'bloquear-ip-escalonar' }
+  },
+  {
+    id: 'ALERT-002',
+    title: 'Login bem-sucedido fora do horário',
+    source: 'Windows', sourceDetail: 'Event ID 4624',
+    severity: 'Medium',
+    timestamp: '2024-11-10 03:18',
+    details: 'Login de rede da conta svc_update às 03:18 de um domingo — fora do horário comercial e incomum para contas de serviço.',
+    logSnippet:
+`EventID: 4624 — Logon bem-sucedido
+Data/Hora: 2024-11-10 03:18:41 (domingo)
+Conta: CORP\\svc_update
+Tipo de Logon: 3 (Network)
+IP de Origem: 10.20.45.113
+Estação de Trabalho: DC01.corp.local`,
+    mitre: 'T1078 — Valid Accounts: uso de credenciais legítimas para acesso não autorizado fora do padrão.',
+    correct: { classification: 'TP', priority: 'Alta', action: 'investigar-conta-escalonar' }
+  },
+  {
+    id: 'ALERT-003',
+    title: 'Varredura de portas detectada',
+    source: 'Network', sourceDetail: 'IDS',
+    severity: 'High',
+    timestamp: '2024-11-08 02:15',
+    details: '15 conexões TCP SYN para portas diferentes em 30 segundos, todas originadas de 10.20.45.113 contra 192.168.10.7.',
+    logSnippet:
+`[IDS] 2024-11-08 02:15:01 TCP SYN 10.20.45.113 -> 192.168.10.7:22
+[IDS] 2024-11-08 02:15:02 TCP SYN 10.20.45.113 -> 192.168.10.7:23
+[IDS] 2024-11-08 02:15:03 TCP SYN 10.20.45.113 -> 192.168.10.7:80
+[IDS] 2024-11-08 02:15:04 TCP SYN 10.20.45.113 -> 192.168.10.7:443
+[IDS] 2024-11-08 02:15:05 TCP SYN 10.20.45.113 -> 192.168.10.7:3389
+... (15 portas diferentes em 30 segundos)`,
+    mitre: 'T1046 — Network Service Discovery: mapeamento de portas para identificar serviços e possíveis vetores de ataque.',
+    correct: { classification: 'TP', priority: 'Alta', action: 'bloquear-ip-registrar' }
+  },
+  {
+    id: 'ALERT-004',
+    title: 'Atualização de software corporativo',
+    source: 'Windows', sourceDetail: 'Event ID 7036',
+    severity: 'Low',
+    timestamp: '2024-11-10 02:00',
+    details: 'Serviço "Windows Update" parado e reiniciado às 02:00 — dentro da janela de manutenção programada (01:00–03:00). Comportamento esperado.',
+    logSnippet:
+`EventID: 7036 — Estado do serviço alterado
+Data/Hora: 2024-11-10 02:00:14
+Serviço: Windows Update (wuauserv)
+Estado: stopped -> running
+Host: WIN10-03.corp.local
+Janela de manutenção: 01:00–03:00 (configurada pelo time de TI)`,
+    mitre: null,
+    correct: { classification: 'FP', priority: 'Baixa', action: 'fechar' }
+  },
+  {
+    id: 'ALERT-005',
+    title: 'Novo usuário criado fora do processo padrão',
+    source: 'Windows', sourceDetail: 'Event ID 4720',
+    severity: 'Critical',
+    timestamp: '2024-11-08 02:19',
+    details: 'Conta svc_update criada às 02:19 por Administrator no DC01 sem ticket de RH associado. Nenhum processo de provisionamento iniciado.',
+    logSnippet:
+`EventID: 4720 — Conta de usuário criada
+Data/Hora: 2024-11-08 02:19:47
+Conta criada: CORP\\svc_update
+Criado por: CORP\\Administrator
+Host: DC01.corp.local
+Ticket de RH: NÃO ENCONTRADO
+Processo de provisionamento: NÃO INICIADO`,
+    mitre: 'T1136 — Create Account: criação de conta para manter persistência ou escalar privilégios no domínio.',
+    correct: { classification: 'TP', priority: 'Crítica', action: 'desabilitar-conta-escalonar' }
+  },
+  {
+    id: 'ALERT-006',
+    title: 'Conexão HTTP para domínio suspeito',
+    source: 'Network', sourceDetail: 'Proxy Log',
+    severity: 'Critical',
+    timestamp: '2024-11-08 03:18',
+    details: 'Requisições POST para update-cdn185.net a exatamente cada 300 segundos — padrão característico de beacon C2 (command & control).',
+    logSnippet:
+`[PROXY] 2024-11-08 03:18:22 POST http://update-cdn185.net/gate.php 200 312B
+[PROXY] 2024-11-08 03:23:22 POST http://update-cdn185.net/gate.php 200 312B
+[PROXY] 2024-11-08 03:28:22 POST http://update-cdn185.net/gate.php 200 312B
+[PROXY] 2024-11-08 03:33:22 POST http://update-cdn185.net/gate.php 200 312B
+Origem: 192.168.10.7  Intervalo: exatamente 300s  Porta destino: 8080`,
+    mitre: 'T1071 + T1571 — Application Layer Protocol e Non-Standard Port: beacon C2 via HTTP em porta não-padrão para evasão.',
+    correct: { classification: 'TP', priority: 'Crítica', action: 'isolar-host-escalonar' }
+  },
+];
+
+/* ── State ───────────────────────────────────────────── */
+let selectedIdx  = null;
+let results      = Array(6).fill(null);
+let totalScore   = 0;
+let triagedCount = 0;
+let formState    = { classification: null, priority: null, action: '' };
+
+/* ── Helpers ─────────────────────────────────────────── */
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function getActionLabel(id) {
+  const a = ACTIONS.find(x => x.id === id);
+  return a ? a.label : id;
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+let toastTimer = null;
+function showToast(variant, pts, label, msg) {
+  const t = document.getElementById('flag-toast');
+  t.className = 'flag-toast ' + variant;
+  document.getElementById('toast-icon').textContent = variant === 'green' ? '✅' : variant === 'yellow' ? '⚠️' : '❌';
+  document.getElementById('toast-pts').textContent  = pts;
+  document.getElementById('toast-label').textContent = label;
+  document.getElementById('toast-msg').textContent  = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── HUD update ──────────────────────────────────────── */
+function updateHUD() {
+  document.getElementById('hud-pts').textContent     = totalScore;
+  document.getElementById('hud-triaged').textContent = triagedCount;
+}
+
+/* ── Alert Queue render ──────────────────────────────── */
+function renderQueue() {
+  const list = document.getElementById('aq-list');
+  list.innerHTML = ALERTS.map((al, i) => {
+    const sev = SEV[al.severity];
+    const res = results[i];
+    const isDone   = res !== null;
+    const isActive = selectedIdx === i;
+
+    let statusCls   = 'pending';
+    let statusLabel = 'Pendente';
+    let ptsHtml     = '';
+
+    if (isDone) {
+      const pts = res.pts;
+      if (pts === 100) { statusCls = 'done-ok';  statusLabel = 'Concluído ✓'; }
+      else if (pts === 50) { statusCls = 'done-par'; statusLabel = 'Concluído ⚠'; }
+      else                 { statusCls = 'done-err'; statusLabel = 'Concluído ✗'; }
+      const ptsCls = pts === 100 ? 'green' : pts === 50 ? 'yellow' : 'red';
+      ptsHtml = `<span class="ai-pts ${ptsCls}">${pts > 0 ? '+' : ''}${pts} pts</span>`;
+    } else if (isActive) {
+      statusCls   = 'active';
+      statusLabel = 'Em análise';
+    }
+
+    let itemCls = 'alert-item';
+    if (isActive) itemCls += ' selected';
+    if (isDone)   itemCls += ' done';
+    if (!isDone && !isActive) itemCls += ' ' + sev.cls;
+
+    return `<div class="${itemCls}" role="option" aria-selected="${isActive}" data-idx="${i}" tabindex="0">
+      <div class="ai-top">
+        <span class="ai-sev-icon">${sev.icon}</span>
+        <span class="ai-id">${esc(al.id)}</span>
+        <span class="ai-status ${statusCls}">${esc(statusLabel)}</span>
+      </div>
+      <div class="ai-title">${esc(al.title)}</div>
+      <div class="ai-meta">
+        <span class="ai-src">${esc(SRC_ICON[al.source])} ${esc(al.source)}</span>
+        <span class="ai-sep">·</span>
+        <span>${esc(al.sourceDetail)}</span>
+        <span class="ai-sep">·</span>
+        <span>${esc(al.timestamp)}</span>
+        ${ptsHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.alert-item').forEach(el => {
+    el.addEventListener('click', () => selectAlert(parseInt(el.dataset.idx)));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') selectAlert(parseInt(el.dataset.idx));
+    });
+  });
+}
+
+/* ── Select alert ────────────────────────────────────── */
+function selectAlert(idx) {
+  selectedIdx = idx;
+  formState = { classification: null, priority: null, action: '' };
+  renderQueue();
+  if (results[idx] !== null) {
+    renderPanelResult(idx);
+  } else {
+    renderPanelForm(idx);
+  }
+}
+
+/* ── Panel: empty state ──────────────────────────────── */
+function renderPanelEmpty() {
+  const panel = document.getElementById('triage-panel');
+  panel.innerHTML = `<div class="tp-empty">
+    <div class="tp-empty-icon">🖥️</div>
+    <div class="tp-empty-title">Console aguardando</div>
+    <div class="tp-empty-sub">Selecione um alerta na fila para iniciar a triagem.</div>
+  </div>`;
+}
+
+/* ── Panel: alert header HTML ────────────────────────── */
+function alertHeaderHTML(al) {
+  const sev = SEV[al.severity];
+  return `<div class="tp-alert-hdr">
+    <div class="tp-sev-badge ${sev.cls}">${sev.icon} ${sev.label}</div>
+    <div class="tp-hdr-info">
+      <div class="tp-alert-id">${esc(al.id)}</div>
+      <div class="tp-alert-title">${esc(al.title)}</div>
+      <div class="tp-alert-meta">
+        <span class="tp-meta-src">${esc(SRC_ICON[al.source])} ${esc(al.source)}</span>
+        <span>·</span><span>${esc(al.sourceDetail)}</span>
+        <span>·</span><span>${esc(al.timestamp)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Panel: triage form ──────────────────────────────── */
+function renderPanelForm(idx) {
+  const al    = ALERTS[idx];
+  const panel = document.getElementById('triage-panel');
+
+  const mitreBadge = al.mitre
+    ? `<div class="mitre-badge">
+        <span class="mitre-tag">MITRE</span>
+        <span>${esc(al.mitre)}</span>
+      </div>`
+    : `<p class="mitre-none">Nenhuma tática MITRE ATT&CK associada (comportamento esperado).</p>`;
+
+  const classOpts = [
+    { v: 'TP', label: 'Verdadeiro Positivo (TP)' },
+    { v: 'FP', label: 'Falso Positivo (FP)' },
+  ].map(o => `<div class="radio-opt" data-group="classification" data-value="${o.v}">
+    <div class="radio-dot"></div><span>${esc(o.label)}</span>
+  </div>`).join('');
+
+  const prioOpts = ['Crítica', 'Alta', 'Média', 'Baixa'].map(p =>
+    `<div class="radio-opt" data-group="priority" data-value="${p}">
+      <div class="radio-dot"></div><span>${p}</span>
+    </div>`
+  ).join('');
+
+  const actionOpts = ACTIONS.map(a =>
+    `<option value="${a.id}">${esc(a.label)}</option>`
+  ).join('');
+
+  panel.innerHTML = alertHeaderHTML(al) +
+    `<div class="tp-body">
+      <div>
+        <div class="tp-section-label">Detalhes do alerta</div>
+        <p class="tp-details">${esc(al.details)}</p>
+      </div>
+      <div>
+        <div class="tp-section-label">Evidência de log</div>
+        <div class="log-snippet">${esc(al.logSnippet)}</div>
+      </div>
+      <div>
+        <div class="tp-section-label">Tática MITRE ATT&CK</div>
+        ${mitreBadge}
+      </div>
+      <div class="triage-form">
+        <div class="tp-section-label">Triagem do Alerta</div>
+        <div class="form-group">
+          <div class="form-label">Classificação</div>
+          <div class="radio-group" id="rg-classification">${classOpts}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Prioridade</div>
+          <div class="radio-group" id="rg-priority">${prioOpts}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Ação Recomendada</div>
+          <select class="form-select" id="triage-action">
+            <option value="">Selecione uma ação…</option>
+            ${actionOpts}
+          </select>
+        </div>
+        <button class="btn-confirm" id="btn-confirm" type="button" disabled>
+          Confirmar Triagem
+        </button>
+      </div>
+    </div>`;
+
+  // Radio button logic
+  panel.querySelectorAll('.radio-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const group = opt.dataset.group;
+      panel.querySelectorAll(`.radio-opt[data-group="${group}"]`).forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      formState[group] = opt.dataset.value;
+      checkConfirmEnabled();
+    });
+  });
+
+  // Select logic
+  document.getElementById('triage-action').addEventListener('change', e => {
+    formState.action = e.target.value;
+    checkConfirmEnabled();
+  });
+
+  // Confirm
+  document.getElementById('btn-confirm').addEventListener('click', () => submitTriage(idx));
+}
+
+function checkConfirmEnabled() {
+  const btn = document.getElementById('btn-confirm');
+  if (!btn) return;
+  btn.disabled = !(formState.classification && formState.priority && formState.action);
+}
+
+/* ── Submit triage ───────────────────────────────────── */
+function submitTriage(idx) {
+  const al      = ALERTS[idx];
+  const correct = al.correct;
+  const { classification, priority, action } = formState;
+
+  let correctCount = 0;
+  const fields = [
+    { key: 'Classificação', user: classification,           correct: correct.classification,     userLabel: classification,           correctLabel: correct.classification },
+    { key: 'Prioridade',    user: priority,                 correct: correct.priority,            userLabel: priority,                 correctLabel: correct.priority },
+    { key: 'Ação',          user: action,                   correct: correct.action,              userLabel: getActionLabel(action),   correctLabel: getActionLabel(correct.action) },
+  ];
+
+  fields.forEach(f => { if (f.user === f.correct) correctCount++; });
+
+  let pts = 0;
+  if (correctCount === 3) pts = 100;
+  else if (correctCount >= 1) pts = 50;
+
+  results[idx] = { classification, priority, action, pts, correctCount, fields };
+  totalScore  += pts;
+  triagedCount++;
+  updateHUD();
+
+  // Toast
+  if (pts === 100) {
+    showToast('green', '+100 pts', 'Triagem Correta!', al.title);
+  } else if (pts > 0) {
+    const wrong = fields.filter(f => f.user !== f.correct).map(f => f.key).join(', ');
+    showToast('yellow', '+50 pts', 'Parcialmente Correto', 'Campo(s) errado(s): ' + wrong);
+  } else {
+    showToast('red', '+0 pts', 'Resposta Incorreta', 'Nenhum campo correto.');
+  }
+
+  renderQueue();
+  renderPanelResult(idx);
+
+  if (triagedCount === 6) {
+    setTimeout(revealClosing, 1800);
+  }
+}
+
+/* ── Panel: result view ──────────────────────────────── */
+function renderPanelResult(idx) {
+  const al  = ALERTS[idx];
+  const res = results[idx];
+  const panel = document.getElementById('triage-panel');
+
+  let statusCls, statusIcon, statusText;
+  if (res.pts === 100)     { statusCls = 'ok';  statusIcon = '✅'; statusText = 'Triagem Correta!'; }
+  else if (res.pts === 50) { statusCls = 'par'; statusIcon = '⚠️'; statusText = 'Parcialmente Correto'; }
+  else                     { statusCls = 'err'; statusIcon = '❌'; statusText = 'Resposta Incorreta'; }
+
+  const compareRows = res.fields.map(f => {
+    const isCorrect = f.user === f.correct;
+    const userCls   = isCorrect ? 'correct' : 'wrong';
+    return `<div class="tr-compare-row">
+      <span class="tr-field">${esc(f.key)}</span>
+      <span class="tr-user ${userCls}">${esc(f.userLabel)}</span>
+      <span class="tr-correct-val">${esc(f.correctLabel)}</span>
+    </div>`;
+  }).join('');
+
+  const mitreSec = al.mitre
+    ? `<div class="tr-mitre">
+        <span class="mitre-tag">MITRE</span>
+        <span>${esc(al.mitre)}</span>
+      </div>`
+    : '';
+
+  panel.innerHTML = alertHeaderHTML(al) +
+    `<div class="tp-body">
+      <div class="triage-result">
+        <div class="tr-status ${statusCls}">
+          <span class="tr-status-icon">${statusIcon}</span>
+          <span class="tr-status-text">${statusText}</span>
+          <span class="tr-pts">+${res.pts} pts</span>
+        </div>
+        <div class="tr-compare">
+          <div class="tr-compare-hdr">
+            <span>Campo</span><span>Sua resposta</span><span>Correto</span>
+          </div>
+          ${compareRows}
+        </div>
+        ${mitreSec}
+      </div>
+      <div>
+        <div class="tp-section-label">Evidência de log</div>
+        <div class="log-snippet">${esc(al.logSnippet)}</div>
+      </div>
+    </div>`;
+}
+
+/* ── Closing section ─────────────────────────────────── */
+function revealClosing() {
+  const el = document.getElementById('closing-section');
+  el.style.display = 'block';
+  el.offsetHeight;
+  el.classList.add('visible');
+
+  // Build summary table
+  const tbody = document.getElementById('summary-tbody');
+  tbody.innerHTML = ALERTS.map((al, i) => {
+    const res = results[i];
+    const pts = res ? res.pts : 0;
+    const resp = res
+      ? `${res.fields[0].userLabel} / ${res.fields[1].userLabel} / ${res.fields[2].userLabel}`
+      : '—';
+    let resCls, resLabel;
+    if (pts === 100)     { resCls = 'td-ok';  resLabel = '✅ Correto'; }
+    else if (pts === 50) { resCls = 'td-par'; resLabel = '⚠️ Parcial'; }
+    else                 { resCls = 'td-err'; resLabel = '❌ Errado'; }
+    const ptsCls = pts === 100 ? 'green' : pts === 50 ? 'yellow' : 'dim';
+
+    return `<tr>
+      <td>${esc(al.id)}</td>
+      <td class="td-title">${esc(al.title)}<br><span class="td-resp">${esc(resp)}</span></td>
+      <td class="td-resp" style="display:table-cell">${esc(resp)}</td>
+      <td class="${resCls}">${resLabel}</td>
+      <td class="td-pts ${ptsCls}">+${pts}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('summary-total').textContent = 'Total: ' + totalScore + ' / 600 pts';
+  document.getElementById('lc-score').textContent = totalScore + ' pts';
+
+  // Feedback
+  let fbCls, fbText;
+  if (totalScore >= 500) {
+    fbCls  = 'great';
+    fbText = '"Excelente plantão, analista. Você identificou corretamente as ameaças críticas e demonstrou julgamento preciso na priorização e escalada."';
+  } else if (totalScore >= 300) {
+    fbCls  = 'good';
+    fbText = '"Bom trabalho. Revise os critérios de priorização e escalada — especialmente para alertas envolvendo criação de contas e padrões de beacon C2."';
+  } else {
+    fbCls  = 'review';
+    fbText = '"Pratique mais. Releia as aulas sobre triagem de alertas SOC e MITRE ATT&CK. Comece pelos alertas Critical e High."';
+  }
+  const fbBox = document.getElementById('feedback-box');
+  fbBox.className = 'feedback-box ' + fbCls;
+  fbBox.textContent = fbText;
+
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+/* ── Init ────────────────────────────────────────────── */
+renderQueue();
+renderPanelEmpty();
+
+})();
+</script>
+</body>
+</html>
