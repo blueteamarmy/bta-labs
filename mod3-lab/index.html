@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Blue Team Army — Lab 03: Automatize a Investigação. Python com Pyodide." />
+  <title>LAB 03 — Automatize a Investigação | Blue Team Army</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0a0e1a;
+      --navy-mid:   #0d1525;
+      --navy-lite:  #111e38;
+      --border:     #1a2a4a;
+      --border2:    #1a3060;
+      --cyan:       #00e5ff;
+      --blue:       #4a9eff;
+      --green:      #00e676;
+      --yellow:     #febc2e;
+      --red:        #ff1744;
+      --orange:     #ff9100;
+      --text:       #c8d8f0;
+      --text-dim:   #a0c4e0;
+      --text-faint: #2a4a7a;
+      --dim:        #8eaac8;
+      --white:      #e8f4ff;
+    }
+
+    html, body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* ── Token Gate ──────────────────────────────────────── */
+    #token-gate {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--navy); z-index: 999;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; text-align: center;
+    }
+    .show-gate #token-gate { display: flex; }
+    .tg-logo { margin-bottom: 28px; }
+    .tg-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(18px, 3.5vw, 26px); font-weight: 700;
+      color: var(--white); margin-bottom: 8px;
+    }
+    .tg-sub {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px; color: var(--text-dim); letter-spacing: .5px; margin-bottom: 28px;
+    }
+    .tg-input {
+      display: block; background: var(--navy-mid); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; padding: 10px 16px; border-radius: 6px; outline: none;
+      width: 100%; max-width: 340px; text-align: center; letter-spacing: 2px;
+      transition: border-color .2s; margin-bottom: 12px;
+    }
+    .tg-input:focus { border-color: var(--cyan); }
+    .tg-input.tg-shake { border-color: var(--red); animation: tg-shake .3s ease; }
+    @keyframes tg-shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+    .tg-btn {
+      display: block; font-family: 'Rajdhani', sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); background: rgba(0,229,255,.06); border: 1.5px solid var(--cyan);
+      padding: 10px 32px; border-radius: 6px; cursor: pointer; transition: background .15s;
+      width: 100%; max-width: 340px; margin-bottom: 14px;
+    }
+    .tg-btn:hover { background: rgba(0,229,255,.12); }
+    .tg-err-msg {
+      font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--red);
+      min-height: 16px; opacity: 0; transition: opacity .2s;
+    }
+    .tg-err-msg.visible { opacity: 1; }
+
+    /* ── HUD ─────────────────────────────────────────────── */
+    #hud {
+      position: fixed; top: 14px; right: 18px;
+      background: var(--navy-mid); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 6px 14px 7px;
+      z-index: 200; text-align: right; pointer-events: none;
+      box-shadow: 0 2px 16px rgba(0,0,0,.4);
+    }
+    .hud-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 9px; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-faint); display: block;
+    }
+    .hud-val {
+      font-family: 'Exo 2', sans-serif; font-size: 19px;
+      font-weight: 700; color: var(--cyan); line-height: 1.1;
+    }
+    .hud-val .hud-tot { font-size: 12px; color: var(--dim); font-weight: 400; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .flag-toast {
+      display: none; position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #0b1d3a; border: 2px solid var(--cyan);
+      border-radius: 10px; padding: 28px 36px;
+      text-align: center; z-index: 500;
+      pointer-events: none; min-width: 220px;
+    }
+    .flag-toast.show { display: block; animation: popin .28s ease; }
+    @keyframes popin {
+      from { transform: translate(-50%,-50%) scale(.82); opacity: 0; }
+      to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+    }
+    .ft-label { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+    .ft-pts   { font-family: 'Exo 2', sans-serif; font-size: 32px; color: var(--cyan); font-weight: 700; margin: 6px 0; }
+    .ft-msg   { font-size: 12px; color: var(--green); }
+
+    /* ── Page ────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 16px 60px; gap: 20px;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .site-header {
+      width: 100%; max-width: 980px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 4px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-hex { width: 40px; height: 40px; flex-shrink: 0; }
+    .logo-text {
+      font-family: 'Exo 2', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1.5px; line-height: 1.1;
+    }
+    .logo-sub {
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .header-link {
+      font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue);
+      text-decoration: none; letter-spacing: 1px;
+      border: 1px solid var(--border); padding: 6px 14px; border-radius: 4px;
+      transition: border-color .15s, color .15s;
+    }
+    .header-link:hover { color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      width: 100%; max-width: 980px;
+      text-align: center; padding: 6px 0 2px;
+    }
+    .hero-tag {
+      display: inline-block; font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cyan); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 2px; margin-bottom: 14px;
+    }
+    .hero-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(22px, 4vw, 34px); font-weight: 700;
+      color: var(--white); line-height: 1.2; margin-bottom: 6px;
+    }
+    .hero-title span { color: var(--cyan); }
+    .hero-subtitle {
+      font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--blue);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    /* Progress */
+    .act-progress {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin: 16px auto 0; flex-wrap: wrap;
+    }
+    .act-step {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      border: 1px solid var(--border); border-radius: 20px;
+      font-family: 'Rajdhani', sans-serif; font-size: 11px;
+      color: var(--text-faint);
+      transition: border-color .3s, color .3s, background .3s;
+      white-space: nowrap;
+    }
+    .act-step--active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,.06); }
+    .act-step--done   { border-color: var(--green); color: var(--green); background: rgba(0,230,118,.06); }
+    .step-num {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 700; flex-shrink: 0; line-height: 1;
+    }
+    .act-step--done .step-num { font-size: 0; }
+    .act-step--done .step-num::after { content: '✓'; font-size: 8px; }
+    .act-arrow { color: var(--border2); font-size: 12px; line-height: 1; }
+
+    /* ── Briefing ─────────────────────────────────────────── */
+    .briefing-card {
+      width: 100%; max-width: 980px;
+      background: var(--navy-mid); border: 1px solid var(--border2);
+      border-left: 4px solid var(--blue);
+      border-radius: 8px; padding: 16px 20px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .briefing-icon { font-size: 28px; flex-shrink: 0; }
+    .briefing-tag {
+      font-family: 'Rajdhani', sans-serif; font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 6px; font-weight: 700;
+    }
+    .briefing-body {
+      font-family: 'Exo 2', sans-serif; font-size: 14px;
+      color: var(--text-dim); line-height: 1.65;
+    }
+    .briefing-body strong { color: var(--cyan); font-weight: 600; }
+
+    /* ── Python Lab card ─────────────────────────────────── */
+    .py-card {
+      width: 100%; max-width: 980px;
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--navy);
+    }
+
+    /* Loading overlay */
+    #py-loading {
+      padding: 48px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      background: var(--navy);
+    }
+    .ld-icon { font-size: 42px; margin-bottom: 14px; }
+    .ld-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .ld-sub { color: var(--dim); font-size: 12px; margin-bottom: 24px; }
+    .ld-bar-wrap {
+      width: 280px; height: 4px; background: var(--border);
+      border-radius: 2px; overflow: hidden; margin-bottom: 10px;
+    }
+    .ld-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      border-radius: 2px; transition: width .25s ease;
+    }
+    .ld-status {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim);
+    }
+
+    /* ── Python Lab Interface ────────────────────────────── */
+    #py-lab {
+      display: flex;
+      height: clamp(520px, 70vh, 700px);
+    }
+
+    /* Sidebar */
+    .py-sidebar {
+      width: 220px; flex-shrink: 0;
+      background: var(--navy-mid);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sb-hdr {
+      padding: 9px 14px 7px;
+      font-family: 'Rajdhani', sans-serif; font-size: 11px;
+      font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--dim);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .sb-list { flex: 1; overflow-y: auto; }
+    .sb-list::-webkit-scrollbar { width: 4px; }
+    .sb-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .sb-item {
+      padding: 10px 14px;
+      display: flex; gap: 10px; align-items: flex-start;
+      border-bottom: 1px solid rgba(26,42,74,.4);
+      border-left: 3px solid transparent;
+      transition: background .12s;
+    }
+    .sb-item.clickable { cursor: pointer; }
+    .sb-item.clickable:hover { background: rgba(74,158,255,.07); }
+    .sb-item.active { background: rgba(0,229,255,.08); border-left-color: var(--cyan); }
+    .sb-item.done   { border-left-color: var(--green); }
+    .sb-item.locked { opacity: .45; }
+
+    .sb-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700;
+      color: var(--dim); flex-shrink: 0; margin-top: 1px;
+    }
+    .sb-item.active .sb-num { border-color: var(--cyan); color: var(--cyan); }
+    .sb-item.done   .sb-num { border-color: var(--green); color: var(--green); }
+
+    .sb-info { flex: 1; min-width: 0; }
+    .sb-title {
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sb-item.active .sb-title { color: var(--cyan); }
+    .sb-item.done   .sb-title { color: var(--green); }
+
+    .sb-pts { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--dim); margin-top: 1px; }
+    .sb-item.done .sb-pts { color: var(--green); }
+
+    .sb-badge { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+
+    .sb-total {
+      border-top: 1px solid var(--border); padding: 10px 14px;
+      flex-shrink: 0;
+      font-family: 'Rajdhani', sans-serif; font-size: 12px;
+      color: var(--text-dim);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sb-total-val { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; color: var(--cyan); }
+
+    /* ── Main column ─────────────────────────────────────── */
+    .py-main {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Exercise header bar */
+    .py-ex-hdr {
+      flex-shrink: 0;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      padding: 7px 16px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .ex-badge-lab {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim);
+      background: var(--navy); border: 1px solid var(--border);
+      padding: 2px 7px; border-radius: 3px; flex-shrink: 0;
+    }
+    .ex-label-lab {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 600;
+      color: var(--white); flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ex-pts-lab {
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      color: var(--cyan); flex-shrink: 0;
+    }
+    .ex-pts-lab.done { color: var(--green); }
+
+    /* Editor section */
+    .py-editor-sec {
+      flex: 6; min-height: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+      border-bottom: 2px solid var(--blue);
+    }
+
+    .ed-toolbar {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 5px 12px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+    }
+    .btn-run {
+      background: rgba(0,229,255,.1); border: 1px solid var(--cyan);
+      border-radius: 4px; color: var(--cyan); padding: 4px 14px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .btn-run:hover  { background: rgba(0,229,255,.2); }
+    .btn-run:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-sec {
+      background: transparent; border: 1px solid var(--border); border-radius: 4px;
+      color: var(--dim); padding: 4px 10px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-sec:hover { border-color: var(--blue); color: var(--blue); }
+    .kb-hint {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim);
+      background: var(--navy); border: 1px solid var(--border);
+      padding: 2px 6px; border-radius: 3px;
+    }
+
+    /* Editor body */
+    .ed-body {
+      flex: 1; min-height: 0;
+      display: flex; overflow: hidden;
+    }
+    .ln-wrap {
+      width: 46px; flex-shrink: 0;
+      background: var(--navy-mid); border-right: 1px solid var(--border);
+      overflow: hidden; padding-top: 8px;
+    }
+    #ln-nums {
+      display: flex; flex-direction: column;
+      padding: 0 8px 0 0; text-align: right;
+      font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.6;
+      color: var(--dim); will-change: transform;
+    }
+    #ln-nums span { display: block; opacity: .45; user-select: none; }
+
+    .code-wrap {
+      flex: 1; min-width: 0; position: relative; overflow: hidden;
+    }
+    #hl-pre {
+      position: absolute; top: 0; left: 0;
+      padding: 8px 14px;
+      font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.6;
+      white-space: pre; word-wrap: normal;
+      color: var(--text); pointer-events: none; user-select: none;
+      margin: 0; min-width: 100%; will-change: transform;
+    }
+    /* Syntax colors */
+    .hk { color: var(--blue); }
+    .hs { color: var(--green); }
+    .hc { color: var(--dim); }
+    .hn { color: var(--orange); }
+
+    #code-ta {
+      position: absolute; inset: 0;
+      padding: 8px 14px;
+      font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.6;
+      background: transparent; color: transparent; caret-color: var(--white);
+      border: none; outline: none; resize: none; overflow: auto;
+      white-space: pre; word-wrap: normal; tab-size: 4; -moz-tab-size: 4; z-index: 1;
+    }
+    #code-ta::selection { background: rgba(74,158,255,.3); }
+    #code-ta::-moz-selection { background: rgba(74,158,255,.3); }
+
+    /* Output section */
+    .py-output-sec {
+      flex: 4; min-height: 0;
+      display: flex; flex-direction: column; background: var(--navy-mid);
+    }
+    .out-hdr {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px;
+      padding: 5px 14px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+    }
+    .out-hdr-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--cyan);
+    }
+    .btn-clr-out {
+      margin-left: auto; background: transparent; border: 1px solid var(--border);
+      border-radius: 3px; color: var(--dim); cursor: pointer; padding: 2px 8px;
+      font-family: 'Exo 2', sans-serif; font-size: 11px;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-clr-out:hover { border-color: var(--red); color: var(--red); }
+    #out-body {
+      flex: 1; overflow-y: auto; padding: 8px 14px;
+      font-family: 'Share Tech Mono', monospace; font-size: 12px; line-height: 1.75;
+    }
+    #out-body::-webkit-scrollbar { width: 5px; }
+    #out-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .out-row { display: flex; gap: 8px; }
+    .out-pfx { color: var(--cyan); flex-shrink: 0; user-select: none; }
+    .out-txt { color: var(--text); word-break: break-all; white-space: pre-wrap; }
+    .out-row.err .out-pfx { color: var(--red); }
+    .out-row.err .out-txt { color: #ff8a9b; }
+    .out-timing { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-size: 10px; color: var(--dim); }
+    .out-val {
+      margin-top: 8px; padding: 7px 12px; border-radius: 5px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+    }
+    .out-val.ok  { background: rgba(0,230,118,.1); border: 1px solid rgba(0,230,118,.3); color: var(--green); }
+    .out-val.fail{ background: rgba(255,23,68,.1);  border: 1px solid rgba(255,23,68,.3);  color: #ff8a9b; }
+    .out-placeholder { color: var(--dim); font-style: italic; font-size: 12px; }
+
+    /* ── Section wrapper (closing) ───────────────────────── */
+    .section-wrap {
+      width: 100%; max-width: 980px;
+      opacity: 0; transform: translateY(24px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .section-wrap.visible { opacity: 1; transform: translateY(0); }
+
+    /* Closing section */
+    .closing-hdr {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0; padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+    .closing-num { font-family: 'Exo 2', sans-serif; font-size: 28px; font-weight: 700; color: var(--green); line-height: 1; flex-shrink: 0; }
+    .closing-title { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .closing-sub { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+    .closing-inner {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 10px 10px; padding: 20px;
+    }
+    .corr-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .corr-table th {
+      background: #080c18; color: var(--text-dim);
+      font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; padding: 8px 14px;
+      text-align: left; border-bottom: 2px solid var(--border);
+    }
+    .corr-table td {
+      padding: 9px 14px; border-bottom: 1px solid rgba(26,42,74,.7);
+      font-family: 'Exo 2', sans-serif; font-size: 13px; color: var(--text-dim);
+      vertical-align: top; line-height: 1.5;
+    }
+    .corr-table td:first-child {
+      color: var(--blue); font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; font-weight: 600; white-space: nowrap; width: 220px;
+    }
+    .corr-hi { color: var(--cyan); font-weight: 600; }
+
+    .narrative {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; color: var(--text-dim);
+      line-height: 1.7; margin-bottom: 24px; padding: 16px;
+      background: #080c18; border-left: 3px solid var(--blue);
+      border-radius: 0 6px 6px 0;
+    }
+    .narrative p { margin-bottom: 10px; }
+    .narrative p:last-child { margin-bottom: 0; }
+    .narrative strong { color: var(--cyan); font-weight: 600; }
+
+    .lab-complete-banner {
+      background: var(--navy-mid); border: 2px solid var(--cyan);
+      border-radius: 10px; padding: 28px; text-align: center;
+    }
+    .lc-icon { font-size: 36px; margin-bottom: 8px; }
+    .lc-title { font-family: 'Exo 2', sans-serif; font-size: 24px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+    .lc-score { font-family: 'Exo 2', sans-serif; font-size: 40px; font-weight: 700; color: var(--yellow); margin-bottom: 10px; letter-spacing: 2px; }
+    .lc-msg { font-family: 'Rajdhani', sans-serif; font-size: 15px; color: var(--text-dim); max-width: 520px; margin: 0 auto; line-height: 1.6; }
+    .lc-back-btn {
+      display: inline-block; margin-top: 20px;
+      font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      color: var(--green); background: transparent;
+      border: 1px solid var(--green); padding: 10px 28px; border-radius: 5px;
+      text-decoration: none; transition: background .15s;
+    }
+    .lc-back-btn:hover { background: rgba(0,230,118,.08); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .site-footer {
+      width: 100%; max-width: 980px;
+      border-top: 1px solid var(--border); padding-top: 20px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .footer-text { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--text-faint); }
+    .footer-link { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--blue); text-decoration: none; }
+    .footer-link:hover { color: var(--cyan); }
+
+    @media (max-width: 640px) {
+      .header-link { display: none; }
+      #py-lab { flex-direction: column; height: auto; min-height: 600px; }
+      .py-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      .sb-list { display: flex; overflow-x: auto; }
+      .sb-item { flex-shrink: 0; border-bottom: none; border-left: none; border-top: 3px solid transparent; }
+      .sb-item.active { border-top-color: var(--cyan); border-left-color: transparent; }
+      .sb-item.done   { border-top-color: var(--green); }
+      .sb-info .sb-title { max-width: 100px; }
+      .py-editor-sec { flex: none; height: 300px; }
+      .py-output-sec { flex: none; height: 200px; }
+      #hud { top: auto; bottom: 14px; right: 14px; }
+    }
+  </style>
+
+  <script>
+    if (localStorage.getItem('bta-lab03-access') === 'BTA-LAB03-2026') {
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      document.documentElement.classList.add('show-gate');
+    }
+  </script>
+</head>
+<body>
+
+<!-- Token Gate -->
+<div id="token-gate" role="dialog" aria-modal="true">
+  <div class="tg-logo">
+    <svg viewBox="0 0 40 46" width="52" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+      <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+      <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+    </svg>
+  </div>
+  <h1 class="tg-title">LAB 03 — Acesso Restrito</h1>
+  <p class="tg-sub">Este lab é exclusivo para alunos matriculados.</p>
+  <input type="text" id="token-input" class="tg-input"
+    placeholder="Digite seu token de acesso"
+    autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+  <button type="button" id="token-btn" class="tg-btn">Acessar Lab</button>
+  <p class="tg-err-msg" id="token-err" role="alert">Token inválido.</p>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <span class="hud-label">Pontuação</span>
+  <div class="hud-val"><span id="hud-pts">0</span> <span class="hud-tot">/ 900 pts</span></div>
+</div>
+
+<!-- Toast -->
+<div class="flag-toast" id="flag-toast">
+  <div class="ft-label">🏁 Exercício Concluído!</div>
+  <div class="ft-pts" id="toast-pts">+100 pts</div>
+  <div class="ft-msg" id="toast-msg"></div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <a class="logo" href="#">
+      <svg class="logo-hex" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 1L38 11V35L20 45L2 35V11L20 1Z" stroke="#00e5ff" stroke-width="1.5" fill="none"/>
+        <path d="M20 8L33 15.5V30.5L20 38L7 30.5V15.5L20 8Z" fill="#0d1525" stroke="#1a3060" stroke-width="1"/>
+        <text x="20" y="27" text-anchor="middle" font-family="'Exo 2', sans-serif" font-size="11" font-weight="700" fill="#00e5ff">BTA</text>
+      </svg>
+      <div>
+        <div class="logo-text">BLUE TEAM ARMY</div>
+        <div class="logo-sub">Training Lab</div>
+      </div>
+    </a>
+    <a class="header-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army &rarr;</a>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-tag">Módulo 3 · Python para Segurança</div>
+    <h1 class="hero-title">LAB 03 — <span>Automatize a Investigação</span></h1>
+    <p class="hero-subtitle">Escreva scripts reais para analisar incidentes.</p>
+
+    <div class="act-progress">
+      <div class="act-step act-step--active" id="prog-1"><span class="step-num">1</span>Ex 1</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-2"><span class="step-num">2</span>Ex 2</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-3"><span class="step-num">3</span>Ex 3</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-4"><span class="step-num">4</span>Ex 4</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-5"><span class="step-num">5</span>Ex 5</div>
+      <div class="act-arrow">→</div>
+      <div class="act-step" id="prog-6"><span class="step-num">6</span>Fechamento</div>
+    </div>
+  </section>
+
+  <!-- Briefing -->
+  <div class="briefing-card">
+    <div class="briefing-icon">🐍</div>
+    <div>
+      <div class="briefing-tag">Briefing do Lab</div>
+      <div class="briefing-body">
+        Analistas experientes <strong>automatizam tarefas repetitivas</strong> com Python.<br>
+        Neste lab você vai escrever scripts reais para analisar os mesmos logs<br>
+        do incidente investigado no <strong>Lab 01</strong> — desta vez em segundos.
+      </div>
+    </div>
+  </div>
+
+  <!-- Python Lab Card -->
+  <div class="py-card">
+
+    <!-- Loading screen -->
+    <div id="py-loading">
+      <div class="ld-icon">🐍</div>
+      <div class="ld-title">Inicializando ambiente Python</div>
+      <div class="ld-sub">Carregando Pyodide via WebAssembly…</div>
+      <div class="ld-bar-wrap"><div class="ld-bar" id="ld-bar"></div></div>
+      <div class="ld-status" id="ld-status">Conectando ao CDN…</div>
+    </div>
+
+    <!-- Python Lab Interface (shown when ready) -->
+    <div id="py-lab" style="display:none">
+
+      <!-- Sidebar -->
+      <aside class="py-sidebar">
+        <div class="sb-hdr">Exercícios</div>
+        <div class="sb-list" id="sb-list"></div>
+        <div class="sb-total">
+          <span>Total</span>
+          <span class="sb-total-val" id="sb-total-val">0 / 900 pts</span>
+        </div>
+      </aside>
+
+      <!-- Main: editor + output -->
+      <div class="py-main">
+
+        <!-- Exercise header -->
+        <div class="py-ex-hdr">
+          <span class="ex-badge-lab" id="ex-badge">Ex 1</span>
+          <span class="ex-label-lab" id="ex-label">—</span>
+          <span class="ex-pts-lab" id="ex-pts-display">+50 pts</span>
+        </div>
+
+        <!-- Editor -->
+        <div class="py-editor-sec">
+          <div class="ed-toolbar">
+            <button class="btn-run" id="btn-run" type="button">▶ Executar</button>
+            <button class="btn-sec" id="btn-reset" type="button">↺ Resetar</button>
+            <span class="kb-hint">Ctrl+Enter</span>
+          </div>
+          <div class="ed-body">
+            <div class="ln-wrap"><div id="ln-nums"></div></div>
+            <div class="code-wrap">
+              <pre id="hl-pre" aria-hidden="true"></pre>
+              <textarea id="code-ta" spellcheck="false" autocomplete="off"
+                autocorrect="off" autocapitalize="off"
+                aria-label="Editor de código Python"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div class="py-output-sec">
+          <div class="out-hdr">
+            <span class="out-hdr-label">▼ Output</span>
+            <button class="btn-clr-out" id="btn-clr-out" type="button">Limpar</button>
+          </div>
+          <div id="out-body"><div class="out-placeholder">// Execute o código para ver o resultado aqui</div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Closing section -->
+  <div class="section-wrap" id="closing-section" style="display:none">
+    <div class="closing-hdr">
+      <div class="closing-num">✓</div>
+      <div>
+        <h2 class="closing-title">Fechamento — Análise Automatizada Concluída</h2>
+        <p class="closing-sub">Você escreveu scripts Python reais para investigar um incidente de segurança.</p>
+      </div>
+    </div>
+    <div class="closing-inner">
+      <table class="corr-table">
+        <thead>
+          <tr>
+            <th>Exercício</th>
+            <th>O que foi detectado no incidente real</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ex 1 — Olá, Analista</td>
+            <td>Confirmou que o ambiente de análise Python está operacional.</td>
+          </tr>
+          <tr>
+            <td>Ex 2 — Contar Falhas</td>
+            <td><span class="corr-hi">8 tentativas de brute force</span> de <span class="corr-hi">10.20.45.113</span> contra linux01.corp.local entre 02:17:03 e 02:17:25.</td>
+          </tr>
+          <tr>
+            <td>Ex 3 — Filtrar por IP</td>
+            <td>Eventos do atacante no DC01: 4625×2 (login falho), 4624×1 (acesso), <span class="corr-hi">4720×1 (conta svc_update criada)</span>.</td>
+          </tr>
+          <tr>
+            <td>Ex 4 — Regex para IOCs</td>
+            <td>IPs <span class="corr-hi">10.20.45.113</span> e <span class="corr-hi">185.220.101.45</span> extraídos do relatório TI — servidor C2 confirmado.</td>
+          </tr>
+          <tr>
+            <td>Ex 5 — Parser auth.log</td>
+            <td><span class="corr-hi">10.20.45.113 com 8 falhas</span> (mais frequente) &gt; 192.168.10.99 com 3 — ranqueamento identifica o atacante principal.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="narrative">
+        <p>Você <strong>automatizou a análise</strong> do mesmo incidente investigado manualmente no Lab 01. Em vez de ler linha por linha, Python processou listas de eventos, filtrou por IP suspeito, extraiu IOCs com regex e ranqueou atacantes em segundos.</p>
+        <p>Na prática SOC, esses scripts são executados sobre <strong>milhões de linhas de log</strong> em tempo real. O que você escreveu aqui é a base de ferramentas como SIEMs, EDRs e plataformas de threat hunting.</p>
+      </div>
+
+      <div class="lab-complete-banner" id="lab-complete">
+        <div class="lc-icon">🏆</div>
+        <h3 class="lc-title">Lab 03 Concluído!</h3>
+        <div class="lc-score" id="lc-score-val">900 pts</div>
+        <p class="lc-msg">Você escreveu 5 scripts de análise forense usando Python. Cada linha de código que você escreveu acelera uma investigação real.</p>
+        <a class="lc-back-btn" href="https://blueteam.army/courses">&larr; Voltar para o Curso</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span class="footer-text">&copy; 2025 Blue Team Army. Todos os direitos reservados.</span>
+    <a class="footer-link" href="https://blueteam.army" target="_blank" rel="noopener">blueteam.army</a>
+  </footer>
+
+</div><!-- .page -->
+
+<script>
+(function () {
+'use strict';
+
+/* ── Token Gate ──────────────────────────────────────── */
+const VALID_TOKEN = 'BTA-LAB03-2026';
+(function initGate() {
+  const inp = document.getElementById('token-input');
+  const btn = document.getElementById('token-btn');
+  const err = document.getElementById('token-err');
+  if (!inp || !btn) return;
+  function tryToken() {
+    if (inp.value.trim() === VALID_TOKEN) {
+      localStorage.setItem('bta-lab03-access', VALID_TOKEN);
+      document.documentElement.classList.remove('show-gate');
+    } else {
+      err.classList.add('visible');
+      inp.classList.add('tg-shake');
+      inp.value = '';
+      setTimeout(() => inp.classList.remove('tg-shake'), 400);
+    }
+  }
+  btn.addEventListener('click', tryToken);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryToken();
+    err.classList.remove('visible');
+  });
+})();
+
+/* ── Exercise Definitions ────────────────────────────── */
+const EXERCISES = [
+  {
+    id: 1, pts: 50,
+    title: 'Olá, Analista',
+    brief: 'Execute o primeiro script para confirmar que o ambiente está funcionando.',
+    code: `# Seu primeiro script de análise
+# Execute para confirmar que o ambiente está funcionando
+print("Ambiente Python pronto para análise forense!")`,
+    validate: out => out.includes('pronto')
+  },
+  {
+    id: 2, pts: 150,
+    title: 'Contar Falhas de Login',
+    brief: 'Conte quantas tentativas de login falharam no auth.log de linux01.corp.local.',
+    code: `# Eventos extraídos do auth.log de linux01.corp.local
+eventos = [
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:03"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:06"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:09"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:13"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:16"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:19"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:22"},
+    {"tipo": "Failed password", "ip": "10.20.45.113", "hora": "02:17:25"},
+    {"tipo": "Accepted password", "ip": "10.20.45.113", "hora": "02:17:31"},
+]
+# TODO: conte quantas tentativas falharam e imprima o resultado`,
+    validate: out => out.includes('8')
+  },
+  {
+    id: 3, pts: 150,
+    title: 'Filtrar por IP Suspeito',
+    brief: 'Filtre e exiba apenas os logs do IP suspeito 10.20.45.113 do DC01.corp.local.',
+    code: `# Logs do controlador de domínio DC01.corp.local
+logs = [
+    {"ip": "192.168.10.5",  "evento": 4624, "usuario": "jsilva"},
+    {"ip": "10.20.45.113",  "evento": 4625, "usuario": "Administrator"},
+    {"ip": "192.168.10.12", "evento": 4624, "usuario": "mferreira"},
+    {"ip": "10.20.45.113",  "evento": 4625, "usuario": "Administrator"},
+    {"ip": "10.20.45.113",  "evento": 4624, "usuario": "Administrator"},
+    {"ip": "10.20.45.113",  "evento": 4720, "usuario": "svc_update"},
+    {"ip": "192.168.10.8",  "evento": 4634, "usuario": "rpereira"},
+]
+# TODO: filtre apenas os logs do IP suspeito e imprima cada um`,
+    validate: out => out.includes('10.20.45.113') && out.includes('svc_update')
+  },
+  {
+    id: 4, pts: 200,
+    title: 'Regex para IOCs',
+    brief: 'Use expressões regulares para extrair indicadores de comprometimento de um relatório de ameaças.',
+    code: `import re
+# Texto extraído de um relatório de threat intelligence
+texto = """
+Indicadores de comprometimento identificados:
+Hash MD5: 4a8a08f09d37b73795649030408b5f8
+IP atacante: 10.20.45.113 realizou varredura
+Dominio C2: update-cdn185.net resolveu para 185.220.101.45
+Beacon enviado de 10.20.45.113 para 185.220.101.45:8080
+SHA256: 9c2d4b6e8a0f1c3d5e7b9a0c2d4f6b8a0c2d4f6b8a0c2d4f6b8a0c2d4f6b8ac
+"""
+# TODO: use re.findall() para extrair todos os enderecos IP do texto`,
+    validate: out => out.includes('10.20.45.113') && out.includes('185.220.101.45')
+  },
+  {
+    id: 5, pts: 350,
+    title: 'Parser de auth.log',
+    brief: 'Conte tentativas falhas por IP e ranqueie do mais frequente ao menos frequente.',
+    code: `# Linhas do auth.log -- mesmo arquivo do Lab 01
+auth_log = """
+2024-11-08 02:17:03 sshd Failed password for root from 10.20.45.113 port 54230
+2024-11-08 02:17:06 sshd Failed password for root from 10.20.45.113 port 54231
+2024-11-08 02:17:09 sshd Failed password for root from 10.20.45.113 port 54232
+2024-11-08 02:17:13 sshd Failed password for root from 10.20.45.113 port 54233
+2024-11-08 02:17:16 sshd Failed password for root from 10.20.45.113 port 54234
+2024-11-08 02:17:19 sshd Failed password for root from 10.20.45.113 port 54235
+2024-11-08 02:17:22 sshd Failed password for root from 10.20.45.113 port 54236
+2024-11-08 02:17:25 sshd Failed password for root from 10.20.45.113 port 54237
+2024-11-08 03:21:44 sshd Failed password for admin from 192.168.10.99 port 41200
+2024-11-08 03:21:47 sshd Failed password for admin from 192.168.10.99 port 41201
+2024-11-08 03:21:50 sshd Failed password for admin from 192.168.10.99 port 41202
+"""
+# TODO: conte tentativas falhas por IP e imprima ranqueado do maior para o menor`,
+    validate: out => {
+      const i1 = out.indexOf('10.20.45.113');
+      const i2 = out.indexOf('192.168.10.99');
+      return i1 !== -1 && i2 !== -1 && i1 < i2;
+    }
+  }
+];
+
+/* ── State ───────────────────────────────────────────── */
+let pyodide     = null;
+let totalScore  = 0;
+let currentEx   = 0;
+
+const exDone    = EXERCISES.map(() => false);
+const exCode    = EXERCISES.map(e => e.code);
+const exOutputs = EXERCISES.map(() => '');  // '' = empty
+
+const CLOSE_THRESHOLD = 750;
+
+/* ── Score helpers ───────────────────────────────────── */
+function award(idx) {
+  if (exDone[idx]) return;
+  exDone[idx] = true;
+  totalScore += EXERCISES[idx].pts;
+  document.getElementById('hud-pts').textContent = totalScore;
+  document.getElementById('sb-total-val').textContent = totalScore + ' / 900 pts';
+  showToast(EXERCISES[idx].pts, EXERCISES[idx].title + ' concluído!');
+  updateSidebar();
+  setProgStep(idx + 1, 'done');
+
+  const nextIdx = idx + 1;
+  if (nextIdx < EXERCISES.length) {
+    setProgStep(nextIdx + 1, 'active');
+    setTimeout(() => switchEx(nextIdx), 1600);
+  }
+  if (totalScore >= CLOSE_THRESHOLD && !document.getElementById('closing-section').style.display.includes('block')) {
+    setTimeout(revealClosing, 2400);
+  }
+}
+
+function showToast(pts, msg) {
+  const t = document.getElementById('flag-toast');
+  document.getElementById('toast-pts').textContent = '+' + pts + ' pts';
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function setProgStep(n, state) {
+  const el = document.getElementById('prog-' + n);
+  if (!el) return;
+  el.classList.remove('act-step--active', 'act-step--done');
+  if (state === 'active') el.classList.add('act-step--active');
+  if (state === 'done')   el.classList.add('act-step--done');
+}
+
+function revealClosing() {
+  const el = document.getElementById('closing-section');
+  el.style.display = 'block';
+  el.offsetHeight;
+  el.classList.add('visible');
+  document.getElementById('lc-score-val').textContent = totalScore + ' pts';
+  setProgStep(6, 'active');
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  setTimeout(() => setProgStep(6, 'done'), 1200);
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+function updateSidebar() {
+  const list = document.getElementById('sb-list');
+  list.innerHTML = EXERCISES.map((ex, i) => {
+    const isDone   = exDone[i];
+    const isActive = i === currentEx;
+    const isLocked = i > 0 && !exDone[i - 1] && !isDone && !isActive;
+    let cls = 'sb-item';
+    if (isDone)    cls += ' done';
+    else if (isActive) cls += ' active';
+    else if (isLocked) cls += ' locked';
+    if (!isLocked) cls += ' clickable';
+    const badge = isDone ? '✓' : isActive ? '●' : isLocked ? '🔒' : '○';
+    return `<div class="${cls}" data-ex="${i}">
+      <div class="sb-num">${ex.id}</div>
+      <div class="sb-info">
+        <div class="sb-title">${esc(ex.title)}</div>
+        <div class="sb-pts">${isDone ? '✓ ' : ''}${ex.pts} pts</div>
+      </div>
+      <div class="sb-badge">${badge}</div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.sb-item.clickable').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = parseInt(el.dataset.ex);
+      if (i !== currentEx) switchEx(i);
+    });
+  });
+}
+
+/* ── Exercise switching ──────────────────────────────── */
+function switchEx(idx) {
+  // Save current code
+  exCode[currentEx] = codeEl.value;
+  // Save current output state
+  exOutputs[currentEx] = outEl.innerHTML;
+
+  currentEx = idx;
+
+  // Update editor
+  codeEl.value = exCode[idx];
+  updateEditor();
+
+  // Restore output
+  outEl.innerHTML = exOutputs[idx] ||
+    '<div class="out-placeholder">// Execute o código para ver o resultado aqui</div>';
+
+  // Update header
+  const ex = EXERCISES[idx];
+  document.getElementById('ex-badge').textContent = 'Ex ' + ex.id;
+  document.getElementById('ex-label').textContent = ex.title;
+  const ptsEl = document.getElementById('ex-pts-display');
+  if (exDone[idx]) {
+    ptsEl.textContent = '✓ Concluído';
+    ptsEl.className = 'ex-pts-lab done';
+  } else {
+    ptsEl.textContent = '+' + ex.pts + ' pts';
+    ptsEl.className = 'ex-pts-lab';
+  }
+
+  updateSidebar();
+  codeEl.focus();
+}
+
+/* ── Load first exercise ─────────────────────────────── */
+function initLab() {
+  const ex = EXERCISES[0];
+  document.getElementById('ex-badge').textContent = 'Ex 1';
+  document.getElementById('ex-label').textContent = ex.title;
+  document.getElementById('ex-pts-display').textContent = '+' + ex.pts + ' pts';
+  codeEl.value = exCode[0];
+  updateEditor();
+  updateSidebar();
+  codeEl.focus();
+}
+
+/* ── Editor refs ─────────────────────────────────────── */
+const codeEl = document.getElementById('code-ta');
+const hlPre  = document.getElementById('hl-pre');
+const lnNums = document.getElementById('ln-nums');
+const outEl  = document.getElementById('out-body');
+
+/* ── Editor logic ────────────────────────────────────── */
+function updateEditor() {
+  const code  = codeEl.value;
+  const count = (code.match(/\n/g) || []).length + 1;
+  if (lnNums.children.length !== count) {
+    lnNums.innerHTML = Array.from({ length: count }, (_, i) =>
+      '<span>' + (i + 1) + '</span>').join('');
+  }
+  hlPre.innerHTML = highlight(code) + '\n';
+  syncScroll();
+}
+
+function syncScroll() {
+  lnNums.style.transform = 'translateY(-' + codeEl.scrollTop + 'px)';
+  hlPre.style.top  = '-' + codeEl.scrollTop + 'px';
+  hlPre.style.left = '-' + codeEl.scrollLeft + 'px';
+}
+
+codeEl.addEventListener('input',  updateEditor);
+codeEl.addEventListener('scroll', syncScroll);
+codeEl.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); runCode(); }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = codeEl.selectionStart;
+    const v = codeEl.value;
+    codeEl.value = v.slice(0, s) + '    ' + v.slice(codeEl.selectionEnd);
+    codeEl.selectionStart = codeEl.selectionEnd = s + 4;
+    updateEditor();
+  }
+});
+
+document.getElementById('btn-run').addEventListener('click', runCode);
+document.getElementById('btn-reset').addEventListener('click', () => {
+  exCode[currentEx] = EXERCISES[currentEx].code;
+  codeEl.value = EXERCISES[currentEx].code;
+  updateEditor();
+  clearOut();
+});
+document.getElementById('btn-clr-out').addEventListener('click', clearOut);
+
+function clearOut() {
+  exOutputs[currentEx] = '';
+  outEl.innerHTML = '<div class="out-placeholder">// Execute o código para ver o resultado aqui</div>';
+}
+
+/* ── Run code ────────────────────────────────────────── */
+async function runCode() {
+  if (!pyodide) return;
+  const runBtn = document.getElementById('btn-run');
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳ Executando…';
+
+  const lines   = [];
+  let hadError  = false;
+
+  pyodide.setStdout({ batched: line => lines.push({ t: 'out', v: line }) });
+  pyodide.setStderr({ batched: line => { lines.push({ t: 'err', v: line }); hadError = true; } });
+
+  const t0 = performance.now();
+  try {
+    await pyodide.runPythonAsync(codeEl.value);
+  } catch (err) {
+    String(err.message || err).split('\n').forEach(l => {
+      if (l.trim()) lines.push({ t: 'err', v: l });
+    });
+    hadError = true;
+  }
+  const elapsed = ((performance.now() - t0) / 1000).toFixed(3);
+
+  renderOut(lines, elapsed, hadError);
+
+  runBtn.disabled = false;
+  runBtn.textContent = '▶ Executar';
+}
+
+function renderOut(lines, elapsed, hadError) {
+  if (!lines.length) {
+    const html = '<div class="out-placeholder">// (sem output)</div>' +
+      '<div class="out-timing">Executado em ' + elapsed + 's</div>';
+    outEl.innerHTML = html;
+    exOutputs[currentEx] = html;
+    return;
+  }
+
+  const rows = lines.map(l => {
+    const pfx = l.t === 'out' ? '&gt;&gt;&gt;' : 'ERR';
+    const cls = l.t === 'err' ? ' err' : '';
+    return '<div class="out-row' + cls + '">' +
+      '<span class="out-pfx">' + pfx + '</span>' +
+      '<span class="out-txt">' + esc(l.v) + '</span></div>';
+  }).join('');
+
+  const timing = '<div class="out-timing">Executado em ' + elapsed + 's</div>';
+
+  let val = '';
+  const ex = EXERCISES[currentEx];
+  if (ex.validate && !hadError) {
+    const allOut = lines.filter(l => l.t === 'out').map(l => l.v).join('\n');
+    if (ex.validate(allOut)) {
+      val = '<div class="out-val ok">✅ Exercício concluído! +' + ex.pts + ' pts</div>';
+      award(currentEx);
+    } else {
+      val = '<div class="out-val fail">❌ Resultado incorreto — tente novamente</div>';
+    }
+  } else if (exDone[currentEx] && !hadError) {
+    val = '<div class="out-val ok">✅ Já concluído!</div>';
+  }
+
+  const html = rows + timing + val;
+  outEl.innerHTML = html;
+  exOutputs[currentEx] = html;
+  outEl.scrollTop = outEl.scrollHeight;
+}
+
+/* ── Syntax Highlighter ──────────────────────────────── */
+const KWS = new Set([
+  'False','None','True','and','as','assert','async','await',
+  'break','class','continue','def','del','elif','else','except',
+  'finally','for','from','global','if','import','in','is',
+  'lambda','nonlocal','not','or','pass','raise','return',
+  'try','while','with','yield',
+  'print','len','range','sorted','enumerate','zip','map','filter',
+  'list','dict','set','tuple','str','int','float','bool','type',
+  'max','min','sum','abs','input','open','re','sys','os'
+]);
+
+function highlight(code) {
+  return code.split('\n').map(highlightLine).join('\n');
+}
+
+function highlightLine(line) {
+  let html = '', i = 0;
+  const L = line.length;
+  while (i < L) {
+    const ch = line[i];
+    if (ch === '#') {
+      html += '<span class="hc">' + esc(line.slice(i)) + '</span>';
+      return html;
+    }
+    if (ch === '"' || ch === "'") {
+      const trip = ch.repeat(3);
+      if (line.slice(i, i + 3) === trip) {
+        // triple-quote: consume to end of line
+        html += '<span class="hs">' + esc(line.slice(i)) + '</span>';
+        return html;
+      }
+      let j = i + 1;
+      while (j < L) {
+        if (line[j] === '\\' && j + 1 < L) { j += 2; continue; }
+        if (line[j] === ch) { j++; break; }
+        j++;
+      }
+      html += '<span class="hs">' + esc(line.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    if (/[a-zA-Z_]/.test(ch)) {
+      let j = i + 1;
+      while (j < L && /\w/.test(line[j])) j++;
+      const w = line.slice(i, j);
+      html += KWS.has(w) ? '<span class="hk">' + w + '</span>' : esc(w);
+      i = j; continue;
+    }
+    if (/[0-9]/.test(ch)) {
+      let j = i + 1;
+      while (j < L && /[0-9.xXa-fA-F_]/.test(line[j])) j++;
+      html += '<span class="hn">' + line.slice(i, j) + '</span>';
+      i = j; continue;
+    }
+    html += esc(ch);
+    i++;
+  }
+  return html;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/* ── Pyodide loading ─────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  const bar    = document.getElementById('ld-bar');
+  const status = document.getElementById('ld-status');
+
+  let pct = 4;
+  const tick = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 5 + 1, 88);
+    bar.style.width = pct + '%';
+  }, 280);
+
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+
+  s.onerror = () => {
+    clearInterval(tick);
+    status.textContent = 'Erro de rede — verifique sua conexão e recarregue.';
+    bar.style.background = 'var(--red)';
+    bar.style.width = '100%';
+  };
+
+  s.onload = async () => {
+    status.textContent = 'Baixando WebAssembly…';
+    try {
+      pyodide = await loadPyodide({
+        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
+      });
+    } catch (e) {
+      clearInterval(tick);
+      status.textContent = 'Erro: ' + e.message;
+      return;
+    }
+
+    clearInterval(tick);
+    bar.style.width = '100%';
+    status.textContent = 'Pronto!';
+    await new Promise(r => setTimeout(r, 300));
+
+    document.getElementById('py-loading').style.display = 'none';
+    document.getElementById('py-lab').style.display = 'flex';
+    document.getElementById('btn-run').disabled = false;
+    initLab();
+  };
+
+  document.getElementById('btn-run').disabled = true;
+  document.head.appendChild(s);
+});
+
+})();
+</script>
+</body>
+</html>
