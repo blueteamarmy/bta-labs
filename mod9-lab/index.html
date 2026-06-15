@@ -185,6 +185,118 @@ a{color:var(--blue);text-decoration:none}
 .footer{border-top:1px solid var(--border);margin-top:48px;padding:18px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .footer-brand{font-family:var(--fh);font-size:12px;color:var(--text-faint);letter-spacing:2px}
 .footer-info{font-size:11px;color:var(--text-faint)}
+/* Event / Packet Tables */
+.ev-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ev-filter{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:4px;border:1px solid var(--border-hi);color:var(--text-faint);background:transparent;cursor:pointer;transition:all .18s}
+.ev-filter:hover{border-color:var(--cyan);color:var(--cyan)}
+.ev-filter.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
+.ev-fc{font-family:var(--fm);font-size:9px;color:inherit;opacity:.7;margin-left:3px}
+.ev-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:8px}
+.ev-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.ev-table th{background:var(--navy-mid);padding:7px 10px;text-align:left;font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;white-space:nowrap;border-bottom:1px solid var(--border)}
+.ev-table td{padding:5px 10px;border-bottom:1px solid rgba(26,47,80,.3);vertical-align:middle}
+.ev-row{cursor:pointer;transition:background .15s}
+.ev-row:hover{background:rgba(30,144,255,.04)}
+.ev-row.sel{background:rgba(0,229,255,.05)}
+.ev-row:last-child td{border-bottom:none}
+.ev-row-crit td:first-child{border-left:2px solid rgba(255,68,68,.6)}
+.ev-row-warn td:first-child{border-left:2px solid rgba(255,136,0,.5)}
+.ev-desc,.pkt-info{white-space:normal!important;max-width:240px;line-height:1.35;color:var(--text-mid)}
+.ev-time,.pkt-time{font-family:var(--fm);font-size:11px;color:var(--text-mid);white-space:nowrap}
+.ev-src,.ev-user{font-family:var(--fm);font-size:11px;color:var(--text-mid);white-space:nowrap}
+.ev-eid{font-family:var(--fm);font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.eid-fail{background:rgba(255,68,68,.1);color:#ff6b6b;border:1px solid rgba(255,68,68,.25)}
+.eid-ok{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25)}
+.eid-warn{background:rgba(255,136,0,.1);color:var(--orange);border:1px solid rgba(255,136,0,.25)}
+.ev-lv-crit{font-family:var(--fh);font-size:9px;font-weight:700;color:#ff6b6b;letter-spacing:1px}
+.ev-lv-warn{font-family:var(--fh);font-size:9px;font-weight:700;color:var(--orange);letter-spacing:1px}
+.ev-lv-ok{font-family:var(--fh);font-size:9px;color:var(--text-faint);letter-spacing:1px}
+.ev-detail{background:var(--navy-hi);border:1px solid var(--border-hi);border-radius:6px;padding:10px 14px;margin-top:4px}
+.ev-detail-hdr{font-family:var(--fh);font-size:13px;font-weight:700;color:#fff;margin-bottom:7px}
+.ev-field{display:flex;gap:12px;padding:4px 0;border-bottom:1px solid rgba(26,47,80,.3)}
+.ev-field:last-child{border-bottom:none}
+.ev-field>span:first-child{font-family:var(--fh);font-size:9px;font-weight:700;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;min-width:75px;padding-top:2px;flex-shrink:0}
+.ev-field>span:last-child{font-family:var(--fm);font-size:11px;color:var(--text-mid)}
+.pkt-table td{white-space:nowrap}
+.pkt-num{font-family:var(--fm);font-size:11px;color:var(--text-faint);min-width:28px}
+.pkt-len{font-family:var(--fm);font-size:11px;color:var(--text-faint);text-align:right}
+.pkt-proto{font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.proto-icmp{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--cyan)}
+.proto-tcp{background:rgba(30,144,255,.1);border:1px solid rgba(30,144,255,.2);color:var(--blue)}
+.proto-dns{background:rgba(254,188,46,.1);border:1px solid rgba(254,188,46,.2);color:var(--gold)}
+.proto-http{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--green)}
+.pkt-row.pkt-crit td:first-child{border-left:2px solid rgba(255,68,68,.6)}
+.pkt-row.pkt-warn td:first-child{border-left:2px solid rgba(255,136,0,.5)}
+.pkt-row.pkt-susp td:first-child{border-left:2px solid rgba(254,188,46,.4)}
+/* Malware Workbench */
+.mal-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--navy-mid)}
+.mal-tab{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:2px;padding:9px 14px;border:none;border-bottom:2px solid transparent;color:var(--text-faint);background:transparent;cursor:pointer;text-transform:uppercase;transition:all .2s;margin-bottom:-1px}
+.mal-tab:hover{color:var(--text-mid)}
+.mal-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.mal-panel{display:none;padding:14px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;font-family:var(--fm);font-size:12px;line-height:1.9;color:#6a9060;min-height:190px}
+.mal-panel.active{display:block}
+.mal-ioc{color:var(--cyan);cursor:pointer;display:inline-block;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,229,255,.2);transition:all .15s}
+.mal-ioc:hover{background:rgba(0,229,255,.08)}
+.mal-ioc.clicked{color:var(--green);border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.07)}
+.mal-lookup-btn{font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:2px;padding:8px 20px;border-radius:5px;border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,229,255,.06);cursor:pointer;transition:all .2s;margin-top:10px;display:block}
+.mal-lookup-btn:hover{background:rgba(0,229,255,.14)}
+.mal-lookup-btn:disabled{opacity:.6;cursor:default}
+.mal-result{margin-top:10px;padding:10px 14px;background:var(--navy-hi);border:1px solid var(--border-hi);border-radius:6px;display:none}
+.mal-result.show{display:block}
+.mal-result-score{font-family:var(--fh);font-size:20px;font-weight:700;color:var(--red);margin-bottom:8px}
+/* CloudTrail */
+.ct-svc{font-family:var(--fh);font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.ct-sts{background:rgba(30,144,255,.1);border:1px solid rgba(30,144,255,.2);color:var(--blue)}
+.ct-s3{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--cyan)}
+.ct-iam{background:rgba(254,188,46,.1);border:1px solid rgba(254,188,46,.2);color:var(--gold)}
+.ct-ec2{background:rgba(255,136,0,.1);border:1px solid rgba(255,136,0,.2);color:var(--orange)}
+.ct-pivot-note{font-size:11px;color:var(--red);margin-top:2px;display:block}
+/* Decision Cards */
+.dec-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px;display:none}
+.dec-card.dec-visible{display:block;animation:fadeSlide .35s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.dec-counter{font-family:var(--fh);font-size:10px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px}
+.dec-q{font-size:14px;font-weight:600;color:#fff;line-height:1.55;margin-bottom:14px}
+.dec-opts{display:flex;flex-direction:column;gap:8px}
+.dec-btn{font-family:var(--fm);font-size:12px;text-align:left;padding:10px 14px;border-radius:6px;border:1px solid var(--border);color:var(--text-mid);background:var(--bg);cursor:pointer;transition:all .2s;line-height:1.4}
+.dec-btn:hover:not(:disabled){border-color:var(--cyan);color:#fff;background:rgba(0,229,255,.05)}
+.dec-btn.correct{border-color:var(--green)!important;color:var(--green)!important;background:rgba(0,230,118,.07)!important}
+.dec-btn.wrong{border-color:var(--red)!important;color:var(--red)!important;background:rgba(255,68,68,.06)!important}
+.dec-btn:disabled:not(.correct):not(.wrong){opacity:.4;cursor:default}
+.dec-fb{margin-top:10px;padding:8px 12px;border-radius:5px;font-size:12px;line-height:1.55;display:none}
+.dec-fb.show-ok{display:block;color:var(--green);background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.22)}
+.dec-fb.show-err{display:block;color:var(--gold);background:rgba(254,188,46,.06);border:1px solid rgba(254,188,46,.22)}
+/* PICERL Form */
+.picerl-sec{background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:10px;overflow:hidden}
+.picerl-letter{font-family:var(--fh);font-size:30px;font-weight:900;color:var(--cyan);float:left;margin:0 12px 4px 0;line-height:1;opacity:.55}
+.picerl-title{font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--text-mid);text-transform:uppercase;padding-top:4px;margin-bottom:6px}
+.picerl-body{clear:both;font-size:12px;color:var(--text-mid);line-height:1.65}
+.picerl-ta{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:#fff;font-family:var(--fm);font-size:12px;padding:8px 10px;resize:vertical;min-height:70px;line-height:1.5;box-sizing:border-box}
+.picerl-ta:focus{outline:none;border-color:var(--cyan)}
+.picerl-chk{display:flex;align-items:flex-start;gap:8px;padding:3px 0;font-size:12px;color:var(--text-mid);cursor:pointer;line-height:1.45}
+.picerl-chk input{accent-color:var(--cyan);margin-top:2px;flex-shrink:0}
+/* Timeline */
+.tl-wrap{border-left:2px solid var(--border);padding:2px 0;margin-bottom:14px}
+.tl-item{display:flex;gap:12px;align-items:flex-start;padding:5px 0 5px 16px;position:relative}
+.tl-item::before{content:'';position:absolute;left:-5px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--border)}
+.tl-crit::before{background:var(--red)!important}
+.tl-warn::before{background:var(--gold)!important}
+.tl-info::before{background:var(--cyan)!important}
+.tl-time{font-family:var(--fm);font-size:11px;color:var(--cyan);white-space:nowrap;min-width:44px}
+.tl-desc{font-size:11px;color:var(--text-mid);line-height:1.45}
+/* Sign & Conclusion */
+.sign-btn{font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:3px;padding:12px 28px;border-radius:7px;border:2px solid var(--cyan);color:var(--cyan);background:rgba(0,229,255,.06);cursor:pointer;transition:all .2s;width:100%;text-transform:uppercase;margin-top:16px}
+.sign-btn:hover:not(:disabled){background:rgba(0,229,255,.14);box-shadow:0 0 22px rgba(0,229,255,.18)}
+.sign-btn:disabled{opacity:.55;cursor:default}
+.conclusion{display:none;padding:28px 24px;background:linear-gradient(135deg,rgba(0,229,255,.05),rgba(0,230,118,.04));border:2px solid var(--cyan);border-radius:12px;text-align:center;margin-top:20px}
+.conclusion.show{display:block;animation:fadeSlide .6s ease}
+.concl-total{font-family:var(--fh);font-size:11px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px}
+.concl-pts{font-family:var(--fh);font-size:52px;font-weight:900;color:var(--cyan);line-height:1;margin-bottom:2px}
+.concl-max{font-family:var(--fh);font-size:13px;color:var(--text-faint);margin-bottom:14px}
+.concl-badge{font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:2px;color:var(--green);margin:0 0 10px;padding:8px 20px;border:2px solid var(--green);border-radius:20px;display:inline-block}
+.concl-msg{font-size:14px;color:var(--text-mid);margin:8px auto 20px;line-height:1.6;max-width:480px}
+.concl-back{font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:2px;padding:9px 22px;border-radius:6px;border:1px solid var(--blue);color:var(--blue);background:rgba(30,144,255,.07);cursor:pointer;text-decoration:none;display:inline-block;transition:all .2s}
+.concl-back:hover{background:rgba(30,144,255,.15)}
 </style>
 </head>
 <body>
@@ -318,7 +430,7 @@ a{color:var(--blue);text-decoration:none}
 <script>
 /* ── State ── */
 const score={f1:0,f2:0,f3:0,f4:0,f5:0,f6:0,f7:0,f8:0};
-const done={f1:new Set(),f2:new Set(),f3:new Set(),f4:new Set(),f5:new Set(),f6:new Set(),f7:new Set()};
+const done={f1:new Set(),f2:new Set(),f3:new Set(),f4:new Set(),f5:new Set(),f6:new Set(),f7:new Set(),f8:new Set()};
 const PMAX={f1:150,f2:200,f3:200,f4:200,f5:150,f6:200,f7:200,f8:200};
 let f1Confirmed=false;
 let termHist=[],termHistIdx=-1;
@@ -374,7 +486,12 @@ function markStep(n,cls){
 /* ── Unlocks ── */
 function checkUnlocks(){
   if(f1Confirmed&&document.getElementById('fase2-locked'))buildFase2();
-  if(score.f2>=160&&document.getElementById('fase3-locked'))unlock3Placeholder();
+  if(score.f2>=160&&document.getElementById('fase3-locked'))buildFase3();
+  if(score.f3>=150&&document.getElementById('fase4-locked'))buildFase4();
+  if(score.f4>=150&&document.getElementById('fase5-locked'))buildFase5();
+  if(score.f5>=100&&document.getElementById('fase6-locked'))buildFase6();
+  if(score.f6>=150&&document.getElementById('fase7-locked'))buildFase7();
+  if(score.f7>=150&&document.getElementById('fase8-locked'))buildFase8();
 }
 
 /* ══════════════════════════════════════
@@ -616,11 +733,592 @@ function buildFase2(){
   inp.focus();
 }
 
-/* Fase 3 placeholder */
-function unlock3Placeholder(){
-  const el=document.getElementById('fase3-locked');if(!el)return;
+/* ══════════════════════════════════════
+   FASE 3 DATA — Windows Events DC01
+══════════════════════════════════════ */
+const DC_EVENTS=[
+  {id:'e01',time:'09:15:00',eid:4624,level:'normal',src:'192.168.1.75',user:'jsilva',desc:'Login de rede bem-sucedido — sessão normal'},
+  {id:'e02',time:'09:00:00',eid:4624,level:'normal',src:'192.168.1.100',user:'admin',desc:'Login de console bem-sucedido — início de turno'},
+  {id:'e03',time:'08:30:00',eid:4624,level:'normal',src:'192.168.1.50',user:'deployer',desc:'Login de serviço automatizado — pipeline CI/CD'},
+  {id:'e04',time:'08:00:01',eid:4624,level:'normal',src:'192.168.1.100',user:'admin',desc:'Login matutino esperado'},
+  {id:'e05',time:'02:21:02',eid:4698,level:'critical',src:'10.20.45.113',user:'Administrator',desc:'Tarefa agendada criada: SvcUpdateTask — ação: powershell -ep bypass -nop'},
+  {id:'e06',time:'02:20:15',eid:4732,level:'critical',src:'10.20.45.113',user:'Administrator',desc:'Membro adicionado ao grupo Administrators: svc_update'},
+  {id:'e07',time:'02:19:47',eid:4720,level:'critical',src:'10.20.45.113',user:'Administrator',desc:'Nova conta criada: svc_update (02:19 — fora do horário comercial)'},
+  {id:'e08',time:'02:17:31',eid:4624,level:'critical',src:'10.20.45.113',user:'Administrator',desc:'Login bem-sucedido de IP externo após 8 falhas consecutivas'},
+  {id:'e09',time:'02:10:35',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 8/8)'},
+  {id:'e10',time:'02:10:22',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 7/8)'},
+  {id:'e11',time:'02:10:08',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 6/8)'},
+  {id:'e12',time:'02:09:55',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 5/8)'},
+  {id:'e13',time:'02:09:41',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 4/8)'},
+  {id:'e14',time:'02:09:28',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 3/8)'},
+  {id:'e15',time:'02:09:14',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 2/8)'},
+  {id:'e16',time:'02:09:01',eid:4625,level:'warning',src:'10.20.45.113',user:'Administrator',desc:'Falha de autenticação — senha incorreta (tentativa 1/8)'},
+];
+
+function buildFase3(){
+  const locked=document.getElementById('fase3-locked');if(!locked)return;
   markStep(2,'done');markStep(3,'active');
-  el.innerHTML=`<div class="locked-card" style="opacity:1;border-color:rgba(254,188,46,.3)"><div class="locked-icon">🔓</div><div><div class="locked-ttl" style="color:var(--gold)">Fase 3 — Windows/AD desbloqueada!</div><div class="locked-sub" style="color:var(--text-mid)">Fase 3 disponível na próxima atualização do lab. Continue praticando!</div></div><div class="locked-pts" style="color:var(--gold)">200 pts</div></div>`;
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase3-wrap';
+
+  const FILT=[
+    {id:'all',lbl:'Todos',n:DC_EVENTS.length},
+    {id:'4625',lbl:'4625 — Falha',n:DC_EVENTS.filter(e=>e.eid===4625).length},
+    {id:'4624',lbl:'4624 — Login',n:DC_EVENTS.filter(e=>e.eid===4624).length},
+    {id:'4720',lbl:'4720 — Conta',n:1},
+    {id:'4732',lbl:'4732 — Grupo',n:1},
+    {id:'4698',lbl:'4698 — Tarefa',n:1},
+  ];
+  const fhtml=FILT.map(f=>'<button class="ev-filter'+(f.id==='all'?' active':'')+'" data-ef="'+f.id+'">'+f.lbl+' <span class="ev-fc">'+f.n+'</span></button>').join('');
+
+  function evRows(evs){
+    return evs.map(e=>{
+      const lc=e.level==='critical'?'ev-row-crit':e.level==='warning'?'ev-row-warn':'';
+      const ec=e.eid===4625?'eid-fail':e.eid===4624?'eid-ok':'eid-warn';
+      const lv=e.level==='critical'?'<span class="ev-lv-crit">CRÍTICO</span>':e.level==='warning'?'<span class="ev-lv-warn">AVISO</span>':'<span class="ev-lv-ok">INFO</span>';
+      return '<tr class="ev-row '+lc+'" data-id="'+e.id+'" data-eid="'+e.eid+'">'
+        +'<td><span class="ev-eid '+ec+'">'+e.eid+'</span></td>'
+        +'<td class="ev-time">'+e.time+'</td><td>'+lv+'</td>'
+        +'<td class="ev-src">'+esc(e.src)+'</td>'
+        +'<td class="ev-user">'+esc(e.user)+'</td>'
+        +'<td class="ev-desc">'+esc(e.desc)+'</td></tr>';
+    }).join('');
+  }
+
+  wrap.innerHTML='<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f3-num">3</div>'
+    +'<div><div class="fase-tag">Fase 3</div><div class="fase-title">Windows Event Viewer — DC01.corp.local</div></div>'
+    +'<div class="fase-score" id="f3-score">'+score.f3+' / 200 pts</div></div>'
+    +'<div class="fase-body"><div class="f-cols"><div class="main-col">'
+    +'<div class="ev-filters" id="ev-filters">'+fhtml+'</div>'
+    +'<div class="ev-table-wrap"><table class="ev-table"><thead><tr>'
+    +'<th>EventID</th><th>Hora</th><th>Nível</th><th>IP Origem</th><th>Usuário</th><th>Descrição</th>'
+    +'</tr></thead><tbody id="ev-tbody">'+evRows(DC_EVENTS)+'</tbody></table></div>'
+    +'<div class="ev-detail" id="ev-detail" style="display:none">'
+    +'<div class="ev-detail-hdr" id="ev-detail-hdr"></div>'
+    +'<div id="ev-detail-body"></div></div>'
+    +'</div><div class="side-col">'
+    +'<div class="chk-hdr">Descobertas — Fase 3</div>'
+    +'<div id="chk-f3-bruteforce" class="chk-item'+(done.f3.has('f3-bruteforce')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Brute force correlacionado no AD</div>'
+    +'<div class="chk-sub">+50 pts · EventID 4625 (8 falhas)</div></div></div>'
+    +'<div id="chk-f3-login" class="chk-item'+(done.f3.has('f3-login')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Login de IP externo identificado</div>'
+    +'<div class="chk-sub">+50 pts · EventID 4624 de 10.20.45.113</div></div></div>'
+    +'<div id="chk-f3-conta" class="chk-item'+(done.f3.has('f3-conta')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Conta backdoor svc_update criada</div>'
+    +'<div class="chk-sub">+50 pts · EventID 4720 — às 02:19</div></div></div>'
+    +'<div id="chk-f3-escalada" class="chk-item'+(done.f3.has('f3-escalada')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Escalada de privilégios no AD</div>'
+    +'<div class="chk-sub">+50 pts · EventID 4732 → Administrators</div></div></div>'
+    +'</div></div></div></div>';
+
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f3>=PMAX.f3)document.getElementById('f3-num').classList.add('done');
+
+  document.querySelectorAll('#ev-filters .ev-filter').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#ev-filters .ev-filter').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+      const f=this.dataset.ef;
+      document.querySelectorAll('#ev-tbody .ev-row').forEach(r=>{r.style.display=(f==='all'||r.dataset.eid===f)?'':'none';});
+      if(f==='4625')award('f3','f3-bruteforce',50,'Brute Force Correlacionado no AD','8 eventos EID 4625 de 10.20.45.113 em 2 minutos');
+    });
+  });
+
+  document.querySelectorAll('#ev-tbody .ev-row').forEach(row=>{
+    row.addEventListener('click',function(){
+      const id=this.dataset.id;const ev=DC_EVENTS.find(e=>e.id===id);if(!ev)return;
+      document.querySelectorAll('#ev-tbody .ev-row').forEach(r=>r.classList.remove('sel'));
+      this.classList.add('sel');
+      const ec=ev.eid===4625?'eid-fail':ev.eid===4624?'eid-ok':'eid-warn';
+      document.getElementById('ev-detail').style.display='block';
+      document.getElementById('ev-detail-hdr').innerHTML='<span class="ev-eid '+ec+'">EventID '+ev.eid+'</span> &nbsp;·&nbsp; DC01 &nbsp;·&nbsp; <span style="color:var(--text-mid)">2024-11-08 '+ev.time+'</span>';
+      document.getElementById('ev-detail-body').innerHTML=
+        '<div class="ev-field"><span>IP Origem</span><span>'+esc(ev.src)+'</span></div>'
+        +'<div class="ev-field"><span>Usuário</span><span>'+esc(ev.user)+'</span></div>'
+        +'<div class="ev-field"><span>Nível</span><span>'+ev.level.toUpperCase()+'</span></div>'
+        +'<div class="ev-field"><span>Descrição</span><span>'+esc(ev.desc)+'</span></div>';
+      if(ev.eid===4625)award('f3','f3-bruteforce',50,'Brute Force Correlacionado no AD','8 eventos EID 4625 de 10.20.45.113');
+      if(ev.eid===4624&&ev.src==='10.20.45.113')award('f3','f3-login',50,'Login de IP Externo Confirmado','Administrator de 10.20.45.113 às 02:17 — após 8 falhas');
+      if(ev.eid===4720)award('f3','f3-conta',50,'Conta Backdoor no AD Descoberta','svc_update criada por Administrator às 02:19');
+      if(ev.eid===4732)award('f3','f3-escalada',50,'Escalada de Privilégios Confirmada','svc_update adicionada ao grupo Administrators');
+    });
+  });
+}
+
+/* ══════════════════════════════════════
+   FASE 4 DATA — Network Packets
+══════════════════════════════════════ */
+const PACKETS=[
+  {num:1,time:'02:00:01',src:'10.20.45.113',dst:'192.168.10.0/24',proto:'ICMP',len:64,info:'Echo Request — host sweep (128 hosts)',level:'suspicious',disc:'f4-scan'},
+  {num:2,time:'02:00:08',src:'10.20.45.113',dst:'192.168.10.7',proto:'TCP',len:60,info:'SYN → 22 [SSH]',level:'suspicious',disc:'f4-scan'},
+  {num:3,time:'02:00:09',src:'10.20.45.113',dst:'192.168.10.7',proto:'TCP',len:60,info:'SYN → 80 [HTTP]',level:'suspicious'},
+  {num:4,time:'02:00:10',src:'10.20.45.113',dst:'192.168.10.7',proto:'TCP',len:60,info:'SYN → 443 [HTTPS]',level:'suspicious'},
+  {num:5,time:'02:09:01',src:'10.20.45.113',dst:'192.168.10.7',proto:'TCP',len:248,info:'SSH — tentativas de autenticação (fase brute force)',level:'warning'},
+  {num:6,time:'02:17:31',src:'10.20.45.113',dst:'192.168.10.7',proto:'TCP',len:248,info:'SSH — autenticação bem-sucedida (acesso obtido)',level:'critical'},
+  {num:7,time:'02:19:02',src:'192.168.10.7',dst:'8.8.8.8',proto:'DNS',len:71,info:'Query A: update-cdn185.net',level:'critical',disc:'f4-c2domain'},
+  {num:8,time:'02:19:02',src:'8.8.8.8',dst:'192.168.10.7',proto:'DNS',len:87,info:'Response: update-cdn185.net → 185.220.101.45',level:'critical'},
+  {num:9,time:'02:19:04',src:'192.168.10.7',dst:'185.220.101.45',proto:'HTTP',len:412,info:'GET /setup.exe — Host: update-cdn185.net',level:'critical',disc:'f4-payload'},
+  {num:10,time:'02:19:05',src:'185.220.101.45',dst:'192.168.10.7',proto:'TCP',len:9566,info:'HTTP/1.1 200 OK — payload binário (46KB)',level:'critical'},
+  {num:11,time:'02:19:07',src:'192.168.10.7',dst:'185.220.101.45',proto:'HTTP',len:314,info:'POST /gate.php — beacon #1 (dados do host)',level:'critical',disc:'f4-beacon'},
+  {num:12,time:'02:19:08',src:'185.220.101.45',dst:'192.168.10.7',proto:'HTTP',len:128,info:'HTTP/1.1 200 OK — resposta do C2',level:'critical'},
+  {num:13,time:'02:24:07',src:'192.168.10.7',dst:'185.220.101.45',proto:'HTTP',len:314,info:'POST /gate.php — beacon #2 (+300s)',level:'critical'},
+  {num:14,time:'02:29:07',src:'192.168.10.7',dst:'185.220.101.45',proto:'HTTP',len:314,info:'POST /gate.php — beacon #3 (+300s)',level:'critical'},
+  {num:15,time:'02:33:09',src:'192.168.10.7',dst:'54.214.101.22',proto:'TCP',len:512,info:'TLS 1.3 Handshake — AWS API (sts.amazonaws.com)',level:'warning'},
+];
+
+function buildFase4(){
+  const locked=document.getElementById('fase4-locked');if(!locked)return;
+  markStep(3,'done');markStep(4,'active');
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase4-wrap';
+
+  function pc(p){return({'ICMP':'proto-icmp','TCP':'proto-tcp','DNS':'proto-dns','HTTP':'proto-http'})[p]||'';}
+  function lc(p){return p.level==='critical'?'pkt-crit':p.level==='warning'?'pkt-warn':p.level==='suspicious'?'pkt-susp':'';}
+
+  function pktRows(pkts){
+    return pkts.map(p=>'<tr class="pkt-row '+lc(p)+'" data-num="'+p.num+'" data-proto="'+p.proto+'">'
+      +'<td class="pkt-num">'+p.num+'</td><td class="ev-time">'+p.time+'</td>'
+      +'<td class="ev-src">'+esc(p.src)+'</td><td class="ev-src">'+esc(p.dst)+'</td>'
+      +'<td><span class="pkt-proto '+pc(p.proto)+'">'+p.proto+'</span></td>'
+      +'<td class="pkt-len">'+p.len+'</td><td class="pkt-info">'+esc(p.info)+'</td></tr>').join('');
+  }
+
+  const pfhtml=['Todos','ICMP','TCP','DNS','HTTP'].map((p,i)=>'<button class="ev-filter'+(i===0?' active':'')+'" data-pf="'+p+'">'+p+'</button>').join('');
+
+  wrap.innerHTML='<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f4-num">4</div>'
+    +'<div><div class="fase-tag">Fase 4</div><div class="fase-title">Análise de Tráfego de Rede — linux01.corp.local</div></div>'
+    +'<div class="fase-score" id="f4-score">'+score.f4+' / 200 pts</div></div>'
+    +'<div class="fase-body"><div class="f-cols"><div class="main-col">'
+    +'<div class="ev-filters" id="pkt-filters">'+pfhtml+'</div>'
+    +'<div class="ev-table-wrap"><table class="ev-table pkt-table"><thead><tr>'
+    +'<th>No.</th><th>Hora</th><th>Origem</th><th>Destino</th><th>Proto</th><th>Tam.</th><th>Info</th>'
+    +'</tr></thead><tbody id="pkt-tbody">'+pktRows(PACKETS)+'</tbody></table></div>'
+    +'<div class="ev-detail" id="pkt-detail" style="display:none">'
+    +'<div class="ev-detail-hdr" id="pkt-detail-hdr"></div>'
+    +'<div id="pkt-detail-body"></div></div>'
+    +'</div><div class="side-col">'
+    +'<div class="chk-hdr">Descobertas — Fase 4</div>'
+    +'<div id="chk-f4-scan" class="chk-item'+(done.f4.has('f4-scan')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Varredura de rede identificada</div>'
+    +'<div class="chk-sub">+50 pts · ICMP sweep + TCP SYN scan</div></div></div>'
+    +'<div id="chk-f4-c2domain" class="chk-item'+(done.f4.has('f4-c2domain')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Domínio C2 identificado</div>'
+    +'<div class="chk-sub">+50 pts · DNS: update-cdn185.net → 185.220.101.45</div></div></div>'
+    +'<div id="chk-f4-payload" class="chk-item'+(done.f4.has('f4-payload')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Download de malware detectado</div>'
+    +'<div class="chk-sub">+50 pts · HTTP 46KB de 185.220.101.45</div></div></div>'
+    +'<div id="chk-f4-beacon" class="chk-item'+(done.f4.has('f4-beacon')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Beacon C2 com intervalo 300s</div>'
+    +'<div class="chk-sub">+50 pts · POST /gate.php · 3 beacons confirmados</div></div></div>'
+    +'</div></div></div></div>';
+
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f4>=PMAX.f4)document.getElementById('f4-num').classList.add('done');
+
+  const DISC_MAP={
+    'f4-scan':{lbl:'Varredura de Rede Identificada',msg:'ICMP sweep + TCP SYN scan de 10.20.45.113'},
+    'f4-c2domain':{lbl:'Domínio C2 Descoberto',msg:'update-cdn185.net → 185.220.101.45 (28/90 VirusTotal)'},
+    'f4-payload':{lbl:'Download de Malware Detectado',msg:'46KB recebido de 185.220.101.45 — RAT backdoor'},
+    'f4-beacon':{lbl:'Beacon C2 com Intervalo 300s Confirmado',msg:'POST /gate.php a cada 300s — padrão RAT periódico'},
+  };
+
+  document.querySelectorAll('#pkt-filters .ev-filter').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#pkt-filters .ev-filter').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');const f=this.dataset.pf;
+      document.querySelectorAll('#pkt-tbody .pkt-row').forEach(r=>{r.style.display=(f==='Todos'||r.dataset.proto===f)?'':'none';});
+    });
+  });
+
+  document.querySelectorAll('#pkt-tbody .pkt-row').forEach(row=>{
+    row.addEventListener('click',function(){
+      const num=parseInt(this.dataset.num);const pkt=PACKETS.find(p=>p.num===num);if(!pkt)return;
+      document.querySelectorAll('#pkt-tbody .pkt-row').forEach(r=>r.classList.remove('sel'));
+      this.classList.add('sel');
+      document.getElementById('pkt-detail').style.display='block';
+      document.getElementById('pkt-detail-hdr').innerHTML='Pacote #'+pkt.num+' &nbsp;·&nbsp; <span class="pkt-proto '+pc(pkt.proto)+'">'+pkt.proto+'</span> &nbsp;·&nbsp; <span style="color:var(--text-mid)">'+pkt.time+'</span>';
+      document.getElementById('pkt-detail-body').innerHTML=
+        '<div class="ev-field"><span>Origem</span><span>'+esc(pkt.src)+'</span></div>'
+        +'<div class="ev-field"><span>Destino</span><span>'+esc(pkt.dst)+'</span></div>'
+        +'<div class="ev-field"><span>Protocolo</span><span>'+pkt.proto+'</span></div>'
+        +'<div class="ev-field"><span>Tamanho</span><span>'+pkt.len+' bytes</span></div>'
+        +'<div class="ev-field"><span>Info</span><span>'+esc(pkt.info)+'</span></div>';
+      if(pkt.disc){const m=DISC_MAP[pkt.disc];if(m)award('f4',pkt.disc,50,m.lbl,m.msg);}
+    });
+  });
+}
+
+/* ══════════════════════════════════════
+   FASE 5 — Malware Workbench
+══════════════════════════════════════ */
+function buildFase5(){
+  const locked=document.getElementById('fase5-locked');if(!locked)return;
+  markStep(4,'done');markStep(5,'active');
+  const HASH='9c2d4b6e8a0f1c3d5e7b9a0c2e4f6b8a1c3d5f7b9a1c3e5d7f9b1c3e5d7f9b1';
+  const INJ=['CreateRemoteThread','VirtualAllocEx','WriteProcessMemory','OpenProcess'];
+  const STRS=['!This program cannot be run in DOS mode.','UPX0','UPX1','CreateRemoteThread','VirtualAllocEx','WriteProcessMemory','OpenProcess','GetProcAddress','LoadLibraryA','WSAStartup','connect','recv','send','Global\\svc_update_mutex_2024','http://update-cdn185.net/gate.php','C:\\Users\\Public\\svc_update.dat','%TEMP%\\.cache_update','cmd.exe /c whoami','Content-Type: application/x-www-form-urlencoded','host_id=%s&os=%s&user=%s&build=%s'];
+  function strLines(){return STRS.map(s=>{
+    if(s.includes('update-cdn185.net'))return'<span class="mal-ioc" id="mal-str-ioc">'+esc(s)+'</span>';
+    if(INJ.includes(s))return'<span style="color:var(--orange)">'+esc(s)+'</span>';
+    if(s.startsWith('Global\\'))return'<span style="color:var(--gold)">'+esc(s)+'</span>';
+    return'<span>'+esc(s)+'</span>';
+  }).join('<br>');}
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase5-wrap';
+  wrap.innerHTML=
+    '<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f5-num">5</div>'
+    +'<div><div class="fase-tag">Fase 5</div><div class="fase-title">Análise de Malware — setup.exe</div></div>'
+    +'<div class="fase-score" id="f5-score">'+score.f5+' / '+PMAX.f5+' pts</div></div>'
+    +'<div class="fase-body"><div class="f-cols"><div class="main-col">'
+    +'<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+    +'<div class="mal-tabs">'
+    +'<button class="mal-tab active" data-tab="file">file</button>'
+    +'<button class="mal-tab" data-tab="strings">strings</button>'
+    +'<button class="mal-tab" data-tab="sha256">sha256sum</button>'
+    +'<button class="mal-tab" data-tab="lookup">Hash Lookup</button>'
+    +'</div>'
+    +'<div class="mal-panel active" id="mp-file">'
+    +'<span style="color:var(--text-faint);font-size:10px">$ file setup.exe</span><br><br>'
+    +'setup.exe: <span style="color:var(--cyan)">PE32 executable</span> (GUI) Intel 80386, <span style="color:var(--gold)">UPX compressed</span>, for MS Windows<br><br>'
+    +'<span style="color:var(--text-faint)">[INFO] Comprimido com UPX — possível evasão de AV<br>[INFO] Arquitetura: x86 32-bit · GUI executable · Windows PE</span>'
+    +'</div>'
+    +'<div class="mal-panel" id="mp-strings">'
+    +'<span style="color:var(--text-faint);font-size:10px">$ strings setup.exe | head -20</span><br><br>'
+    +strLines()
+    +'<br><br><span style="color:var(--text-faint)">[DICA] Clique na URL do C2 para registrar o IOC</span>'
+    +'</div>'
+    +'<div class="mal-panel" id="mp-sha256">'
+    +'<span style="color:var(--text-faint);font-size:10px">$ sha256sum setup.exe</span><br><br>'
+    +'<span style="color:var(--green)">'+HASH+'</span>  setup.exe<br><br>'
+    +'<span style="color:var(--text-faint)">[INFO] Copie o hash e use a aba Hash Lookup para verificar reputação</span>'
+    +'</div>'
+    +'<div class="mal-panel" id="mp-lookup" style="white-space:normal">'
+    +'<span style="color:var(--text-faint);font-size:10px">Consultar hash em bases de malware:</span><br>'
+    +'<div style="font-family:var(--fm);font-size:11px;word-break:break-all;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;margin:8px 0">'+HASH+'</div>'
+    +'<button class="mal-lookup-btn" id="mal-lookup-btn">Consultar Hash (VirusTotal / MalwareBazaar)</button>'
+    +'<div class="mal-result" id="mal-result">'
+    +'<div class="mal-result-score">34 / 72 <span style="font-size:13px;color:var(--text-mid)">engines detectaram</span></div>'
+    +'<div class="ev-field"><span>Classificação</span><span>Trojan.Generic.Backdoor</span></div>'
+    +'<div class="ev-field"><span>Família</span><span>BlackBerry RAT</span></div>'
+    +'<div class="ev-field"><span>Tags</span><span>backdoor · upx-packed · c2 · process-injection</span></div>'
+    +'<div class="ev-field"><span>First seen</span><span>2024-10-15</span></div>'
+    +'</div>'
+    +'</div>'
+    +'</div></div>'
+    +'<div class="side-col">'
+    +'<div class="chk-hdr">Descobertas — Fase 5</div>'
+    +'<div id="chk-f5-filetype" class="chk-item'+(done.f5.has('f5-filetype')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Tipo PE32 UPX confirmado</div>'
+    +'<div class="chk-sub">+50 pts · aba: file</div></div></div>'
+    +'<div id="chk-f5-strings" class="chk-item'+(done.f5.has('f5-strings')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">URL do C2 identificada nas strings</div>'
+    +'<div class="chk-sub">+50 pts · clicar na URL na aba strings</div></div></div>'
+    +'<div id="chk-f5-hash" class="chk-item'+(done.f5.has('f5-hash')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Hash confirmado como malware</div>'
+    +'<div class="chk-sub">+50 pts · aba: Hash Lookup → Consultar</div></div></div>'
+    +'</div></div></div></div>';
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f5>=PMAX.f5)document.getElementById('f5-num').classList.add('done');
+  document.querySelectorAll('#fase5-wrap .mal-tab').forEach(tab=>{
+    tab.addEventListener('click',function(){
+      document.querySelectorAll('#fase5-wrap .mal-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('#fase5-wrap .mal-panel').forEach(p=>p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('mp-'+this.dataset.tab).classList.add('active');
+      if(this.dataset.tab==='file')award('f5','f5-filetype',50,'PE32 UPX Confirmado','setup.exe identificado como PE32 comprimido com UPX');
+    });
+  });
+  document.getElementById('mal-str-ioc')?.addEventListener('click',function(){
+    this.classList.add('clicked');
+    award('f5','f5-strings',50,'URL do C2 Descoberta','http://update-cdn185.net/gate.php — IOC confirmado nas strings');
+  });
+  document.getElementById('mal-lookup-btn').addEventListener('click',function(){
+    this.disabled=true;this.textContent='Consultando...';
+    setTimeout(()=>{
+      document.getElementById('mal-result').classList.add('show');
+      this.textContent='Consulta concluída';
+      award('f5','f5-hash',50,'Hash Confirmado como Malware','34/72 engines — Trojan.Generic.Backdoor (BlackBerry RAT)');
+    },1200);
+  });
+}
+
+/* ══════════════════════════════════════
+   FASE 6 — CloudTrail / AWS Pivot
+══════════════════════════════════════ */
+function buildFase6(){
+  const locked=document.getElementById('fase6-locked');if(!locked)return;
+  markStep(5,'done');markStep(6,'active');
+  const CT=[
+    {id:'ct01',time:'02:33:01',event:'GetCallerIdentity',svc:'STS',user:'deploy-bot',ip:'203.0.113.42',level:'critical',disc:'f6-pivot',res:null,
+     note:'Chave de /home/deployer/.aws/credentials no servidor linux01 comprometido',
+     detail:'Primeira chamada AWS de IP externo usando credencial de deploy-bot. Reconhecimento de identidade — passo inicial do pivô AWS.'},
+    {id:'ct02',time:'02:33:48',event:'ListUsers',svc:'IAM',user:'deploy-bot',ip:'203.0.113.42',level:'high',res:null,
+     detail:'Enumeração de todos os usuários IAM da conta. Reconhecimento de alvos para escalonamento.'},
+    {id:'ct03',time:'02:34:09',event:'ListRoles',svc:'IAM',user:'deploy-bot',ip:'203.0.113.42',level:'high',res:null,
+     detail:'Enumeração de roles IAM disponíveis — mapeamento de privilégios e possíveis vetores de assume-role.'},
+    {id:'ct04',time:'02:34:33',event:'ListBuckets',svc:'S3',user:'deploy-bot',ip:'203.0.113.42',level:'high',res:null,
+     detail:'Listagem de todos os buckets S3 — identificação de alvos para exfiltração de dados.'},
+    {id:'ct05',time:'02:35:01',event:'GetObject',svc:'S3',user:'deploy-bot',ip:'203.0.113.42',level:'critical',disc:'f6-exfil',res:'corp-backup-2024/employees.csv',
+     detail:'Download de employees.csv — PII de funcionários. Possível obrigação de notificação ANPD (LGPD Art. 48).'},
+    {id:'ct06',time:'02:35:22',event:'GetObject',svc:'S3',user:'deploy-bot',ip:'203.0.113.42',level:'critical',disc:'f6-exfil',res:'corp-backup-2024/financials_q3.xlsx',
+     detail:'Download de relatório financeiro confidencial Q3 — dados estratégicos corporativos exfiltrados.'},
+    {id:'ct07',time:'02:36:00',event:'CreateUser',svc:'IAM',user:'deploy-bot',ip:'203.0.113.42',level:'critical',disc:'f6-backdoor',res:'svc-monitor-01',
+     detail:'Criação de usuário IAM backdoor svc-monitor-01 fora de horário comercial e sem aprovação. Técnica de persistência.'},
+    {id:'ct08',time:'02:36:45',event:'AttachUserPolicy',svc:'IAM',user:'deploy-bot',ip:'203.0.113.42',level:'critical',disc:'f6-backdoor',res:'svc-monitor-01 ← AdministratorAccess',
+     detail:'Política AdministratorAccess anexada ao usuário backdoor. Escalada total de privilégios na conta AWS.'},
+    {id:'ct09',time:'02:37:12',event:'RunInstances',svc:'EC2',user:'svc-monitor-01',ip:'203.0.113.42',level:'critical',disc:'f6-mining',res:'4× t3.xlarge · us-east-1 (sem tags)',
+     detail:'4 instâncias t3.xlarge iniciadas pelo backdoor sem tags de projeto/owner. CPU 98%. Padrão típico de cryptomining.'},
+    {id:'ct10',time:'02:37:55',event:'CreateAccessKey',svc:'IAM',user:'svc-monitor-01',ip:'203.0.113.42',level:'high',res:'svc-monitor-01',
+     detail:'Chave de acesso adicional criada para o usuário backdoor — vetor de persistência alternativo caso a chave original seja revogada.'},
+  ];
+  const SVC_CLASS={STS:'ct-sts',S3:'ct-s3',IAM:'ct-iam',EC2:'ct-ec2'};
+  function lvBadge(l){return l==='critical'?'<span class="ev-lv-crit">CRÍTICO</span>':'<span class="ev-lv-warn">ALTO</span>';}
+  function ctRows(){return CT.map(e=>'<tr class="ev-row'+(e.level==='critical'?' ev-row-crit':' ev-row-warn')+'" data-id="'+e.id+'">'
+    +'<td class="ev-time">'+e.time+'</td>'
+    +'<td><span class="ct-svc '+(SVC_CLASS[e.svc]||'')+'">'+e.svc+'</span></td>'
+    +'<td style="font-family:var(--fm);font-size:11px;color:#fff;white-space:nowrap">'+esc(e.event)+'</td>'
+    +'<td>'+lvBadge(e.level)+'</td>'
+    +'<td class="ev-src">'+esc(e.user)+'</td>'
+    +'<td class="ev-src">'+esc(e.ip)+'</td>'
+    +'<td>'+(e.res?'<span style="font-family:var(--fm);font-size:10px;color:var(--text-mid)">'+esc(e.res)+'</span>':'<span style="color:var(--text-faint)">—</span>')+'</td>'
+    +'</tr>').join('');}
+  const DISC={
+    'f6-pivot':{lbl:'Vetor de Pivô AWS Identificado',msg:'deploy-bot credencial usada de IP externo — chave encontrada em linux01'},
+    'f6-exfil':{lbl:'Exfiltração S3 Confirmada',msg:'employees.csv + financials_q3.xlsx baixados de corp-backup-2024'},
+    'f6-backdoor':{lbl:'Backdoor IAM Descoberto',msg:'svc-monitor-01 criado com AdministratorAccess pelo atacante'},
+    'f6-mining':{lbl:'Cryptomining EC2 Identificado',msg:'4× t3.xlarge lançadas por svc-monitor-01 às 02:37'},
+  };
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase6-wrap';
+  wrap.innerHTML=
+    '<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f6-num">6</div>'
+    +'<div><div class="fase-tag">Fase 6</div><div class="fase-title">Investigação Cloud — AWS CloudTrail</div></div>'
+    +'<div class="fase-score" id="f6-score">'+score.f6+' / '+PMAX.f6+' pts</div></div>'
+    +'<div class="fase-body">'
+    +'<div style="background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.18);border-radius:6px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:var(--cyan)">'
+    +'<strong>Vetor de pivô:</strong> Chave IAM de <code style="font-family:var(--fm);color:var(--gold)">deploy-bot</code> encontrada em <code style="font-family:var(--fm);color:var(--gold)">/home/deployer/.aws/credentials</code> no linux01 comprometido. Clique nos eventos para investigar.'
+    +'</div>'
+    +'<div class="f-cols"><div class="main-col">'
+    +'<div class="ev-table-wrap"><table class="ev-table"><thead><tr>'
+    +'<th>Hora</th><th>Svc</th><th>Evento</th><th>Nível</th><th>Usuário IAM</th><th>IP Origem</th><th>Recurso</th>'
+    +'</tr></thead><tbody id="ct-tbody">'+ctRows()+'</tbody></table></div>'
+    +'<div class="ev-detail" id="ct-detail" style="display:none">'
+    +'<div class="ev-detail-hdr" id="ct-detail-hdr"></div>'
+    +'<div id="ct-detail-body"></div>'
+    +'</div>'
+    +'</div><div class="side-col">'
+    +'<div class="chk-hdr">Descobertas — Fase 6</div>'
+    +'<div id="chk-f6-pivot" class="chk-item'+(done.f6.has('f6-pivot')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Vetor de pivô AWS identificado</div>'
+    +'<div class="chk-sub">+50 pts · GetCallerIdentity de IP externo</div></div></div>'
+    +'<div id="chk-f6-exfil" class="chk-item'+(done.f6.has('f6-exfil')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Exfiltração S3 confirmada</div>'
+    +'<div class="chk-sub">+50 pts · employees.csv + financials_q3.xlsx</div></div></div>'
+    +'<div id="chk-f6-backdoor" class="chk-item'+(done.f6.has('f6-backdoor')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Backdoor IAM descoberto</div>'
+    +'<div class="chk-sub">+50 pts · CreateUser + AdministratorAccess</div></div></div>'
+    +'<div id="chk-f6-mining" class="chk-item'+(done.f6.has('f6-mining')?' done':'')+'">'
+    +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">Cryptomining EC2 identificado</div>'
+    +'<div class="chk-sub">+50 pts · 4× t3.xlarge sem tags</div></div></div>'
+    +'</div></div></div></div>';
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f6>=PMAX.f6)document.getElementById('f6-num').classList.add('done');
+  document.querySelectorAll('#ct-tbody .ev-row').forEach(row=>{
+    row.addEventListener('click',function(){
+      const ev=CT.find(e=>e.id===this.dataset.id);if(!ev)return;
+      document.querySelectorAll('#ct-tbody .ev-row').forEach(r=>r.classList.remove('sel'));
+      this.classList.add('sel');
+      document.getElementById('ct-detail').style.display='block';
+      document.getElementById('ct-detail-hdr').innerHTML=
+        '<span class="ct-svc '+(SVC_CLASS[ev.svc]||'')+'">'+ev.svc+'</span>'
+        +' &nbsp;·&nbsp; <strong>'+esc(ev.event)+'</strong>'
+        +' &nbsp;·&nbsp; <span style="color:var(--text-mid)">'+ev.time+'</span>';
+      let body='<div class="ev-field"><span>Usuário IAM</span><span>'+esc(ev.user)+'</span></div>'
+        +'<div class="ev-field"><span>IP Origem</span><span>'+esc(ev.ip)+'</span></div>'
+        +(ev.res?'<div class="ev-field"><span>Recurso</span><span>'+esc(ev.res)+'</span></div>':'')
+        +'<div class="ev-field"><span>Análise</span><span>'+esc(ev.detail)+'</span></div>';
+      if(ev.note)body='<div style="background:rgba(255,68,68,.07);border:1px solid rgba(255,68,68,.2);border-radius:5px;padding:7px 10px;margin-bottom:8px;font-size:11px;color:#ff6b6b">&#9888; '+esc(ev.note)+'</div>'+body;
+      document.getElementById('ct-detail-body').innerHTML=body;
+      if(ev.disc){const d=DISC[ev.disc];if(d)award('f6',ev.disc,50,d.lbl,d.msg);}
+    });
+  });
+}
+
+/* ══════════════════════════════════════
+   FASE 7 — Decisões de Contenção
+══════════════════════════════════════ */
+function buildFase7(){
+  const locked=document.getElementById('fase7-locked');if(!locked)return;
+  markStep(6,'done');markStep(7,'active');
+  const DECS=[
+    {id:'d1',q:'linux01 ainda está online com shell ativa. Qual a primeira ação de contenção?',
+     opts:[{t:'Desligar imediatamente',fb:'Você perderia evidências voláteis — processos ativos, conexões de rede e conteúdo da RAM, cruciais para análise forense.'},{t:'Isolar na rede mantendo o sistema ligado',correct:true,fb:'Correto. Isolamento de rede preserva evidências voláteis e interrompe a comunicação C2 sem destruir dados forenses.'},{t:'Não fazer nada ainda — continuar investigando',fb:'O atacante mantém acesso ativo — cada minuto representa risco adicional de exfiltração ou escalada de privilégios.'}],
+     pts:50,key:'f7-d1',dlbl:'linux01 isolado na rede'},
+    {id:'d2',q:'Conta svc_update foi adicionada ao grupo Administrators no AD. O que fazer?',
+     opts:[{t:'Deletar a conta imediatamente',fb:'Deletar remove os logs de auditoria associados — evidências forenses serão perdidas. Agende a remoção após coleta forense.'},{t:'Desabilitar a conta no AD',correct:true,fb:'Correto. Desabilitar preserva os logs de auditoria e impede novos logins sem destruir evidências. Remove as sessões ativas.'},{t:'Resetar apenas a senha da conta',fb:'Insuficiente — tickets Kerberos ativos podem persistir por horas. Desabilitar invalida todas as sessões imediatamente.'}],
+     pts:50,key:'f7-d2',dlbl:'svc_update desabilitada no AD'},
+    {id:'d3',q:'Chave de acesso IAM de deploy-bot foi usada para pivô na AWS. O que fazer?',
+     opts:[{t:'Revogar a chave de acesso (DeleteAccessKey)',correct:true,fb:'Correto. Revogar a chave invalida imediatamente o acesso AWS sem impactar o usuário IAM ou os pipelines de CI/CD que dependem deste usuário.'},{t:'Deletar o usuário deploy-bot inteiramente',fb:'Impacto em produção — pipelines de CI/CD dependem deste usuário IAM. Revogar apenas a chave comprometida é mais cirúrgico.'},{t:'Alterar a senha do usuário IAM',fb:'Chaves de acesso AWS são independentes da senha do usuário. Alterar a senha não invalida as access keys existentes.'}],
+     pts:50,key:'f7-d3',dlbl:'Chave deploy-bot revogada'},
+    {id:'d4',q:'4× EC2 t3.xlarge rodando cryptomining a $0,66/hora cada. O que fazer?',
+     opts:[{t:'Terminar (Terminate) as instâncias',correct:true,fb:'Correto. Terminate libera todos os recursos e encerra a cobrança imediatamente. Capture logs de sistema antes, se possível.'},{t:'Parar (Stop) as instâncias',fb:'Stop mantém o armazenamento EBS alocado — ainda gera custo e pode ser reiniciado pelo atacante se a chave de svc-monitor-01 não for revogada.'},{t:'Ignorar por enquanto',fb:'Cada hora gera ~$2,64 em prejuízo direto. Em 24h seriam mais de $63 — além do custo reputacional e legal.'}],
+     pts:50,key:'f7-d4',dlbl:'EC2 maliciosas terminadas'},
+    {id:'d5',q:'update-cdn185.net ainda resolve no DNS interno. Outros hosts podem estar comprometidos.',
+     opts:[{t:'Bloquear no DNS/Firewall/Proxy corporativo',correct:true,fb:'Correto. Bloquear evita comunicação C2 em toda a rede e facilita a detecção de outros hosts infectados que tentarem resolver o domínio.'},{t:'Apenas monitorar o tráfego para o domínio',fb:'Monitorar sem bloquear permite que o C2 continue ativo — outros hosts podem receber comandos e exfiltrar dados durante a investigação.'}],
+     pts:0,key:'f7-d5',dlbl:'C2 bloqueado no DNS/Proxy'},
+    {id:'d6',q:'Incidente confirmado: acesso não-autorizado + exfiltração de PII e dados financeiros. Quem notificar primeiro?',
+     opts:[{t:'Publicar comunicado nas redes sociais',fb:'Violação grave de protocolo de IR — comunicação pública prematura sem controle jurídico pode agravar a situação legal e violar obrigações contratuais.'},{t:'Notificar CISO + Jurídico internamente',correct:true,fb:'Correto. Protocolo padrão: CISO/Jurídico primeiro para avaliar obrigações legais — LGPD Art. 48 exige notificação à ANPD em até 72h após a confirmação.'},{t:'Enviar e-mail para todos os funcionários',fb:'Pânico interno desnecessário, risco de vazamento para a mídia antes do controle jurídico e possível violação de obrigações contratuais com clientes.'}],
+     pts:0,key:'f7-d6',dlbl:'CISO + Jurídico notificados'},
+  ];
+  function decCard(d,i){
+    const prev=i===0||done.f7.has(DECS[i-1].key);
+    const ans=done.f7.has(d.key);
+    const cOpt=d.opts.find(o=>o.correct);
+    let h='<div class="dec-card'+(prev?' dec-visible':'')+'" id="dec-'+d.id+'">';
+    h+='<div class="dec-counter">DECISÃO '+(i+1)+' / 6</div>';
+    h+='<div class="dec-q">'+esc(d.q)+'</div><div class="dec-opts">';
+    d.opts.forEach((opt,j)=>{
+      if(ans)h+='<button class="dec-btn'+(opt.correct?' correct':'')+'" disabled>'+esc(opt.t)+'</button>';
+      else h+='<button class="dec-btn" data-dec="'+d.id+'" data-opt="'+j+'">'+esc(opt.t)+'</button>';
+    });
+    h+='</div>';
+    h+=ans&&cOpt?'<div class="dec-fb show-ok">'+esc(cOpt.fb)+'</div>':'<div class="dec-fb" id="fb-'+d.id+'"></div>';
+    return h+'</div>';
+  }
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase7-wrap';
+  wrap.innerHTML=
+    '<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f7-num">7</div>'
+    +'<div><div class="fase-tag">Fase 7</div><div class="fase-title">Decisões de Contenção</div></div>'
+    +'<div class="fase-score" id="f7-score">'+score.f7+' / '+PMAX.f7+' pts</div></div>'
+    +'<div class="fase-body"><div class="f-cols"><div class="main-col">'
+    +DECS.map((d,i)=>decCard(d,i)).join('')
+    +'</div><div class="side-col">'
+    +'<div class="chk-hdr">Decisões — Fase 7</div>'
+    +DECS.map(d=>'<div id="chk-'+d.key+'" class="chk-item'+(done.f7.has(d.key)?' done':'')+'">'
+      +'<div class="chk-dot"></div><div class="chk-info"><div class="chk-txt">'+esc(d.dlbl)+'</div>'
+      +'<div class="chk-sub">'+(d.pts>0?'+'+d.pts+' pts':'bônus narrativo')+'</div></div></div>').join('')
+    +'</div></div></div></div>';
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f7>=PMAX.f7)document.getElementById('f7-num').classList.add('done');
+  DECS.forEach((d,idx)=>{
+    const card=document.getElementById('dec-'+d.id);if(!card)return;
+    card.querySelectorAll('.dec-btn[data-dec]').forEach(btn=>{
+      btn.addEventListener('click',function(){
+        const opt=d.opts[parseInt(this.dataset.opt)];
+        const fb=document.getElementById('fb-'+d.id);
+        if(opt.correct){
+          this.classList.add('correct');
+          card.querySelectorAll('.dec-btn').forEach(b=>{b.disabled=true;});
+          if(fb){fb.textContent=opt.fb;fb.className='dec-fb show-ok';}
+          if(d.pts>0){award('f7',d.key,d.pts,'Decisão Correta — '+d.dlbl,'');}
+          else{if(!done.f7.has(d.key)){done.f7.add(d.key);document.getElementById('chk-'+d.key)?.classList.add('done');save();}}
+          if(idx<DECS.length-1){setTimeout(()=>{
+            const nx=document.getElementById('dec-'+DECS[idx+1].id);
+            if(nx){nx.classList.add('dec-visible');nx.scrollIntoView({behavior:'smooth',block:'nearest'});}
+          },1500);}
+        }else{
+          this.classList.add('wrong');this.disabled=true;
+          if(fb){fb.textContent=opt.fb;fb.className='dec-fb show-err';}
+        }
+      });
+    });
+  });
+}
+
+/* ══════════════════════════════════════
+   FASE 8 — Relatório PICERL + Conclusão
+══════════════════════════════════════ */
+function buildFase8(){
+  const locked=document.getElementById('fase8-locked');if(!locked)return;
+  markStep(7,'done');markStep(8,'active');
+  const f7ok=(k)=>done.f7.has(k);
+  const TL=[
+    {t:'02:00',d:'Scanner web detecta vulnerabilidade DVWA — início da cadeia de ataque',c:'tl-warn'},
+    {t:'02:09',d:'Brute force SSH iniciado (10.20.45.113 → linux01)',c:'tl-warn'},
+    {t:'02:17',d:'Acesso SSH bem-sucedido — credenciais de Administrator comprometidas',c:'tl-crit'},
+    {t:'02:19',d:'Web shell instalada + beacon C2 + conta svc_update criada no AD',c:'tl-crit'},
+    {t:'02:33',d:'Pivô para AWS — credenciais IAM encontradas em /home/deployer/.aws/credentials',c:'tl-crit'},
+    {t:'02:37',d:'4× EC2 t3.xlarge lançadas para cryptomining por svc-monitor-01',c:'tl-crit'},
+    {t:'08:47',d:'SIEM detecta anomalias — 4 alertas críticos (EID 4720, 4732, 4698 + beacon DNS)',c:'tl-info'},
+  ];
+  const wrap=document.createElement('div');wrap.className='fase-wrap';wrap.id='fase8-wrap';
+  wrap.innerHTML=
+    '<div class="fase-card">'
+    +'<div class="fase-hdr"><div class="fase-num" id="f8-num">8</div>'
+    +'<div><div class="fase-tag">Fase 8</div><div class="fase-title">Relatório PICERL + Conclusão</div></div>'
+    +'<div class="fase-score" id="f8-score">'+score.f8+' / '+PMAX.f8+' pts</div></div>'
+    +'<div class="fase-body">'
+    +'<div class="chk-hdr" style="margin-bottom:8px">Timeline do Incidente</div>'
+    +'<div class="tl-wrap">'
+    +TL.map(t=>'<div class="tl-item '+t.c+'"><span class="tl-time">'+t.t+'</span><span class="tl-desc">'+esc(t.d)+'</span></div>').join('')
+    +'</div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">P</div><div class="picerl-title">Preparação — Lacunas Identificadas</div>'
+    +'<div class="picerl-body" style="color:var(--red)">'
+    +'• Sem MFA habilitado no acesso SSH/RDP externo<br>'
+    +'• Web shell ativa por 7h sem detecção (ausência de EDR no linux01)<br>'
+    +'• Credenciais AWS em texto plano em /home/deployer/.aws/credentials<br>'
+    +'• Ausência de alertas de comportamento anômalo no CloudTrail/SIEM'
+    +'</div></div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">I</div><div class="picerl-title">Identificação</div>'
+    +'<div class="picerl-body" style="color:var(--cyan)">'
+    +'Alerta SIEM 08h47 — 4 alertas críticos correlacionados: EID 4720 (CreateUser), EID 4732 (AddMember), EID 4698 (ScheduledTask) no DC01 + beacon HTTP POST /gate.php detectado pelo Zeek.'
+    +'</div></div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">C</div><div class="picerl-title">Contenção — Ações Executadas</div>'
+    +'<div class="picerl-body">'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d1')?' checked':'')+'>linux01 isolado da rede (sistema mantido ligado para forense)</label>'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d2')?' checked':'')+'>Conta svc_update desabilitada no Active Directory</label>'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d3')?' checked':'')+'>Chave de acesso IAM deploy-bot revogada</label>'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d4')?' checked':'')+'>4× EC2 t3.xlarge terminadas (us-east-1)</label>'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d5')?' checked':'')+'>update-cdn185.net bloqueado no DNS/Firewall/Proxy</label>'
+    +'<label class="picerl-chk"><input type="checkbox"'+(f7ok('f7-d6')?' checked':'')+'>CISO e Jurídico notificados internamente</label>'
+    +'</div></div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">E</div><div class="picerl-title">Erradicação — Artefatos a Remover</div>'
+    +'<div class="picerl-body">'
+    +'<label class="picerl-chk"><input type="checkbox">shell.php removida de /var/www/html/</label>'
+    +'<label class="picerl-chk"><input type="checkbox">setup.exe e svc_update.dat removidos do linux01</label>'
+    +'<label class="picerl-chk"><input type="checkbox">Conta svc_update deletada do Active Directory (pós-forense)</label>'
+    +'<label class="picerl-chk"><input type="checkbox">Usuário IAM svc-monitor-01 deletado da conta AWS</label>'
+    +'<label class="picerl-chk"><input type="checkbox">Todas as access keys de deploy-bot auditadas e revogadas</label>'
+    +'<label class="picerl-chk"><input type="checkbox">Tarefa agendada SvcUpdateTask removida do DC01</label>'
+    +'</div></div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">R</div><div class="picerl-title">Recuperação</div>'
+    +'<div class="picerl-body"><textarea class="picerl-ta" id="picerl-r" placeholder="Descreva o plano de recuperação: restauração de snapshots, reimagem do linux01, revalidação de credenciais, scan de integridade dos sistemas afetados..."></textarea></div></div>'
+    +'<div class="picerl-sec"><div class="picerl-letter">L</div><div class="picerl-title">Lições Aprendidas</div>'
+    +'<div class="picerl-body"><textarea class="picerl-ta" id="picerl-l" placeholder="O que poderia ter prevenido este incidente? Que melhorias de processo, ferramentas ou treinamento são necessários para fortalecer a postura defensiva?"></textarea></div></div>'
+    +'<button class="sign-btn" id="sign-btn"'+(done.f8.has('f8-report')?' disabled':'')+'>Assinar Relatório Final</button>'
+    +'<div class="conclusion'+(done.f8.has('f8-report')?' show':'')+'" id="conclusion">'
+    +'<div class="concl-total">Pontuação Final</div>'
+    +'<div class="concl-pts" id="concl-pts">'+(done.f8.has('f8-report')?total():'—')+'</div>'
+    +'<div class="concl-max">/ 1500 pts</div>'
+    +'<div class="concl-badge">&#11088; Blue Team Analyst Certified — BTA-2026</div>'
+    +'<div class="concl-msg" id="concl-msg"></div>'
+    +'<a class="concl-back" href="https://blueteam.army/courses">&#8592; Voltar para o Curso</a>'
+    +'</div>'
+    +'</div></div>';
+  locked.replaceWith(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  if(score.f8>=PMAX.f8)document.getElementById('f8-num').classList.add('done');
+  function setMsg(t){
+    const msg=t>=1300?'Analista excepcional. Você está pronto para o SOC.':t>=1000?'Bom trabalho. Revise as fases de contenção para consolidar o aprendizado.':'Continue praticando. Revise os conceitos e tente novamente.';
+    document.getElementById('concl-msg').textContent=msg;
+  }
+  if(done.f8.has('f8-report'))setMsg(total());
+  document.getElementById('sign-btn').addEventListener('click',function(){
+    this.disabled=true;
+    award('f8','f8-report',200,'Relatório PICERL Assinado','Incidente documentado — BTA Lab 09 concluído!');
+    const t=total();
+    document.getElementById('concl-pts').textContent=t;
+    setMsg(t);
+    document.getElementById('conclusion').classList.add('show');
+    document.getElementById('conclusion').scrollIntoView({behavior:'smooth',block:'start'});
+  });
 }
 
 /* ── Restore ── */
