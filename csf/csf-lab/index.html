@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operador de Plantão — Lab Extra CSF | Blue Team Army</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a0e1a;--navy-mid:#0d1525;--navy-lite:#111e38;
+  --border:#1a2a4a;--border2:#1a3060;
+  --cyan:#00e5ff;--blue:#4a9eff;--green:#00e5a0;
+  --yellow:#febc2e;--red:#ff6b6b;--purple:#c084fc;
+  --text:#c8d8f0;--text2:#8aaacf;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--navy);color:var(--text);font-family:'Exo 2',sans-serif;font-size:15px;min-height:100vh}
+
+/* ── TOKEN GATE ─────────────────────────────── */
+#gate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999}
+.gate-box{border:1px solid var(--border2);background:var(--navy-mid);padding:48px 40px;border-radius:12px;max-width:420px;width:90%;text-align:center}
+.gate-logo{font-family:'Rajdhani',sans-serif;font-size:22px;color:var(--cyan);letter-spacing:3px;margin-bottom:8px}
+.gate-title{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:4px}
+.gate-sub{color:var(--text2);font-size:13px;margin-bottom:28px}
+.gate-box input{width:100%;background:#060a12;border:1px solid var(--border2);border-radius:6px;padding:12px 16px;color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:16px;text-align:center;letter-spacing:4px;outline:none;margin-bottom:12px}
+.gate-box input:focus{border-color:var(--cyan)}
+.gate-btn{width:100%;background:var(--cyan);color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:2px;border:none;border-radius:6px;padding:13px;cursor:pointer;transition:.2s}
+.gate-btn:hover{filter:brightness(1.15)}
+#gate-err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+
+/* ── LAB SHELL ──────────────────────────────── */
+#lab{display:none}
+header{background:var(--navy-mid);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.hdr-logo{font-family:'Rajdhani',sans-serif;font-size:18px;color:var(--cyan);letter-spacing:2px}
+.hdr-title{font-family:'Rajdhani',sans-serif;font-size:20px;color:#fff;flex:1}
+.hdr-score{font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--cyan)}
+
+/* progress */
+.progress-bar{background:var(--navy-mid);border-bottom:1px solid var(--border);padding:10px 24px}
+.prog-steps{display:flex;gap:0;counter-reset:step}
+.prog-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.prog-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--border2);z-index:0}
+.step-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);position:relative;z-index:1;transition:.3s}
+.step-dot.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
+.step-dot.done{border-color:var(--green);background:var(--green);color:#000}
+.step-lbl{font-size:11px;color:var(--text2);text-align:center}
+.step-lbl.active{color:var(--cyan)}
+.step-lbl.done{color:var(--green)}
+
+main{max-width:900px;margin:0 auto;padding:28px 20px 80px}
+
+/* ── FASE CARD ──────────────────────────────── */
+.fase-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;margin-bottom:24px;overflow:hidden}
+.fase-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.fase-num{width:36px;height:36px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--cyan);flex-shrink:0}
+.fase-header h2{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;flex:1}
+.fase-pts{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text2)}
+.fase-body{padding:22px}
+.fase-desc{color:var(--text2);font-size:14px;margin-bottom:18px;line-height:1.6}
+
+/* locked */
+.locked-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text2);gap:10px}
+.locked-ph svg{opacity:.3}
+.locked-ph span{font-size:13px}
+
+/* ── SCENARIO CARDS (phase 1) ───────────────── */
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.sc-grid{grid-template-columns:1fr}}
+.sc-card{background:var(--navy-lite);border:1px solid var(--border);border-radius:8px;padding:16px}
+.sc-card h4{font-family:'Rajdhani',sans-serif;font-size:16px;color:#fff;margin-bottom:6px}
+.sc-card p{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px}
+.sc-opts{display:flex;flex-direction:column;gap:6px}
+.sc-opt{background:#060a12;border:1px solid var(--border2);border-radius:5px;padding:8px 12px;font-size:13px;cursor:pointer;transition:.2s;text-align:left}
+.sc-opt:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.sc-opt.correct{border-color:var(--green);color:var(--green);background:rgba(0,229,160,.08)}
+.sc-opt.wrong{border-color:var(--red);color:var(--red);opacity:.5}
+.sc-opt:disabled{cursor:default}
+.sc-badge{display:inline-block;margin-top:8px;font-size:11px;color:var(--green);font-family:'Share Tech Mono',monospace}
+
+/* ── TRAFFIC TABLE (phase 2) ──────────────────*/
+.traffic-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.traffic-tbl th{text-align:left;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);padding:8px 10px;font-size:12px}
+.traffic-tbl td{padding:8px 10px;border-bottom:1px solid rgba(26,42,74,.5)}
+.traffic-tbl tr.clickable{cursor:pointer;transition:.15s}
+.traffic-tbl tr.clickable:hover{background:var(--navy-lite)}
+.traffic-tbl tr.found{background:rgba(0,229,160,.06);border-left:3px solid var(--green)}
+.traffic-tbl tr.found td:first-child{padding-left:7px}
+.svc-tag{display:inline-block;padding:2px 7px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:11px}
+.t-ok{color:#8aaacf}.t-sus{color:var(--yellow)}.t-bad{color:var(--red)}
+.traf-note{font-size:13px;color:var(--text2);margin-bottom:14px}
+
+/* ── PHISHING (phase 3) ──────────────────── */
+.email-wrap{background:#060a12;border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'Exo 2',sans-serif}
+.email-field{margin-bottom:10px;display:flex;gap:8px;font-size:13px}
+.email-field .lbl{color:var(--text2);min-width:50px}
+.email-body{margin-top:14px;font-size:14px;line-height:1.8;color:#c8d8f0}
+.phi{cursor:pointer;border-bottom:2px dashed var(--yellow);transition:.2s;padding:0 2px}
+.phi:hover{background:rgba(254,188,46,.1)}
+.phi.found{border-bottom-color:var(--green);color:var(--green);cursor:default}
+.phi-hint{font-size:12px;color:var(--text2);margin-bottom:12px}
+.phi-count{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan);margin-top:12px}
+
+/* ── DEFENSE BUILDER (phase 4) ───────────────*/
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.tool-card{background:#060a12;border:1px solid var(--border2);border-radius:8px;padding:14px;cursor:pointer;transition:.2s;text-align:center;user-select:none}
+.tool-card:hover:not(.locked-tool){border-color:var(--blue)}
+.tool-card.selected{border-color:var(--cyan);background:rgba(0,229,255,.05)}
+.tool-card.tool-error{border-color:var(--red);background:rgba(255,107,107,.05);animation:shake .3s}
+.tool-card.locked-tool{opacity:.4;cursor:not-allowed}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.tool-icon{font-size:28px;margin-bottom:6px}
+.tool-name{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:#fff}
+.tool-desc{font-size:11px;color:var(--text2);margin-top:3px}
+.def-btn{background:var(--cyan);color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:1px;border:none;border-radius:6px;padding:11px 28px;cursor:pointer;transition:.2s}
+.def-btn:hover{filter:brightness(1.1)}
+.def-btn:disabled{opacity:.4;cursor:default}
+.def-result{margin-top:14px;padding:14px;border-radius:6px;font-size:14px;line-height:1.6;display:none}
+.def-result.show{display:block}
+.def-result.ok{background:rgba(0,229,160,.08);border:1px solid var(--green);color:var(--green)}
+.def-result.err{background:rgba(255,107,107,.08);border:1px solid var(--red);color:var(--red)}
+
+/* ── LGPD CALC (phase 5) ──────────────────── */
+.lgpd-form{display:flex;flex-direction:column;gap:16px}
+.lgpd-row{display:flex;flex-direction:column;gap:6px}
+.lgpd-row label{font-size:13px;color:var(--text2)}
+.lgpd-row input[type=range]{width:100%;accent-color:var(--cyan)}
+.lgpd-row select,.lgpd-row input[type=text]{background:#060a12;border:1px solid var(--border2);border-radius:5px;padding:9px 12px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;width:100%}
+.lgpd-row select:focus{border-color:var(--cyan)}
+.radio-group{display:flex;flex-direction:column;gap:8px}
+.radio-group label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;padding:9px 12px;border-radius:5px;border:1px solid var(--border2);transition:.2s}
+.radio-group label:hover{border-color:var(--blue)}
+.radio-group input[type=radio]{accent-color:var(--cyan)}
+.lgpd-range-val{font-family:'Share Tech Mono',monospace;color:var(--cyan);font-size:14px}
+.calc-btn{background:var(--cyan);color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:1px;border:none;border-radius:6px;padding:11px 28px;cursor:pointer;transition:.2s;margin-top:4px;width:fit-content}
+.calc-btn:hover:not(:disabled){filter:brightness(1.1)}
+.calc-btn:disabled{opacity:.4;cursor:default}
+.lgpd-result{margin-top:14px;padding:16px;border-radius:8px;display:none}
+.lgpd-result.show{display:block;background:rgba(0,229,255,.05);border:1px solid var(--cyan)}
+.lgpd-result h4{font-family:'Rajdhani',sans-serif;font-size:17px;color:var(--cyan);margin-bottom:8px}
+.lgpd-result p{font-size:13px;color:var(--text2);line-height:1.6}
+.lgpd-result .lgpd-stat{font-family:'Share Tech Mono',monospace;color:#fff;font-size:14px;margin:6px 0}
+.lgpd-quiz{margin-top:20px;border-top:1px solid var(--border);padding-top:18px}
+.lgpd-quiz h4{font-family:'Rajdhani',sans-serif;font-size:16px;color:#fff;margin-bottom:14px}
+.quiz-q{margin-bottom:16px}
+.quiz-q p{font-size:14px;margin-bottom:8px}
+.quiz-opt{background:#060a12;border:1px solid var(--border2);border-radius:5px;padding:9px 12px;font-size:13px;cursor:pointer;display:block;width:100%;text-align:left;margin-bottom:5px;transition:.2s}
+.quiz-opt:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.quiz-opt.correct{border-color:var(--green);color:var(--green);background:rgba(0,229,160,.08)}
+.quiz-opt.wrong{border-color:var(--red);color:var(--red);opacity:.5}
+.quiz-opt:disabled{cursor:default}
+
+/* ── CLOSING ──────────────────────────────── */
+.closing{padding:32px 22px;text-align:center}
+.closing-score{font-family:'Share Tech Mono',monospace;font-size:48px;color:var(--cyan);margin-bottom:4px}
+.closing-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.bto-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.bto-desc{color:var(--text2);font-size:14px;margin-bottom:20px}
+.bto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;text-align:left}
+@media(max-width:600px){.bto-grid{grid-template-columns:1fr 1fr}}
+.bto-card{background:var(--navy-lite);border:1px solid var(--border);border-radius:7px;padding:12px;font-size:13px}
+.bto-card .bc-num{font-family:'Share Tech Mono',monospace;color:var(--cyan);font-size:11px;margin-bottom:4px}
+.bto-card .bc-title{font-family:'Rajdhani',sans-serif;font-size:15px;color:#fff}
+.bto-card .bc-tag{font-size:11px;color:var(--text2);margin-top:3px}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;padding:16px 40px;border-radius:8px;text-decoration:none;margin-bottom:16px;transition:.2s}
+.cta-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.back-link{display:block;color:var(--text2);font-size:13px;text-decoration:none;margin-top:8px}
+.back-link:hover{color:var(--cyan)}
+
+/* ── TOAST ────────────────────────────────── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:rgba(0,229,160,.12);border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:14px;padding:10px 24px;border-radius:6px;opacity:0;transition:.3s;pointer-events:none;z-index:500;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* ── MISC ─────────────────────────────────── */
+.info-box{background:rgba(74,158,255,.06);border:1px solid var(--blue);border-radius:6px;padding:12px 16px;font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.info-box strong{color:var(--blue)}
+</style>
+</head>
+<body>
+
+<!-- TOKEN GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">BLUE TEAM ARMY</div>
+    <div class="gate-title">Operador de Plantão</div>
+    <div class="gate-sub">Lab Extra — Cyber Fundamentals · Insira o código de acesso</div>
+    <input type="text" id="gate-input" placeholder="BTA-CSF-XXXX" maxlength="12" autocomplete="off" spellcheck="false">
+    <button class="gate-btn" onclick="checkGate()">ACESSAR LAB</button>
+    <div id="gate-err"></div>
+  </div>
+</div>
+
+<!-- LAB -->
+<div id="lab">
+  <header>
+    <div class="hdr-logo">BTA</div>
+    <div class="hdr-title">Operador de Plantão <span style="color:var(--text2);font-size:14px;font-weight:400">— Lab Extra CSF</span></div>
+    <div class="hdr-score"><span id="hud-score">0</span> / 500 pts</div>
+  </header>
+
+  <div class="progress-bar">
+    <div class="prog-steps">
+      <div class="prog-step"><div class="step-dot" id="dot1">1</div><div class="step-lbl" id="lbl1">CIA</div></div>
+      <div class="prog-step"><div class="step-dot" id="dot2">2</div><div class="step-lbl" id="lbl2">Tráfego</div></div>
+      <div class="prog-step"><div class="step-dot" id="dot3">3</div><div class="step-lbl" id="lbl3">Phishing</div></div>
+      <div class="prog-step"><div class="step-dot" id="dot4">4</div><div class="step-lbl" id="lbl4">Defesa</div></div>
+      <div class="prog-step"><div class="step-dot" id="dot5">5</div><div class="step-lbl" id="lbl5">LGPD</div></div>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- FASE 1 — CIA Triad -->
+    <div class="fase-card">
+      <div class="fase-header">
+        <div class="fase-num">1</div>
+        <h2>Tríade CIA</h2>
+        <div class="fase-pts" id="pts1">0 / 100 pts</div>
+      </div>
+      <div class="fase-body">
+        <div class="fase-desc">Cada cenário abaixo afetou uma das propriedades da Tríade CIA. Identifique qual pilar foi comprometido.</div>
+        <div class="sc-grid" id="sc-grid"></div>
+      </div>
+    </div>
+
+    <!-- FASE 2 — Traffic -->
+    <div class="fase-card" id="phase2-card">
+      <div class="fase-header">
+        <div class="fase-num">2</div>
+        <h2>Análise de Tráfego</h2>
+        <div class="fase-pts" id="pts2">0 / 100 pts</div>
+      </div>
+      <div class="fase-body" id="phase2-body">
+        <div class="locked-ph" id="phase2-locked">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Complete a Fase 1 para desbloquear</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 — Phishing -->
+    <div class="fase-card" id="phase3-card">
+      <div class="fase-header">
+        <div class="fase-num">3</div>
+        <h2>Caça ao Phishing</h2>
+        <div class="fase-pts" id="pts3">0 / 100 pts</div>
+      </div>
+      <div class="fase-body" id="phase3-body">
+        <div class="locked-ph" id="phase3-locked">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Encontre as 3 ameaças na Fase 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 4 — Defense Builder -->
+    <div class="fase-card" id="phase4-card">
+      <div class="fase-header">
+        <div class="fase-num">4</div>
+        <h2>Construtor de Defesa</h2>
+        <div class="fase-pts" id="pts4">0 / 100 pts</div>
+      </div>
+      <div class="fase-body" id="phase4-body">
+        <div class="locked-ph" id="phase4-locked">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Encontre todos os indicadores na Fase 3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 5 — LGPD -->
+    <div class="fase-card" id="phase5-card">
+      <div class="fase-header">
+        <div class="fase-num">5</div>
+        <h2>Calculadora LGPD</h2>
+        <div class="fase-pts" id="pts5">0 / 100 pts</div>
+      </div>
+      <div class="fase-body" id="phase5-body">
+        <div class="locked-ph" id="phase5-locked">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Confirme a defesa na Fase 4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOSING -->
+    <div class="fase-card" id="closing-card" style="display:none">
+      <div class="fase-body" id="closing-locked"></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ────────────────────────────────────────
+const score={f1:0,f2:0,f3:0,f4:0,f5:0};
+const done={
+  f1:new Set(),f2:new Set(),f3:new Set(),f4:new Set(),f5:new Set()
+};
+const PMAX={f1:100,f2:100,f3:100,f4:100,f5:100};
+
+function total(){return Object.values(score).reduce((a,b)=>a+b,0)}
+
+function save(){
+  const st={
+    score:{f1:score.f1,f2:score.f2,f3:score.f3,f4:score.f4,f5:score.f5},
+    done:{f1:[...done.f1],f2:[...done.f2],f3:[...done.f3],f4:[...done.f4],f5:[...done.f5]}
+  };
+  localStorage.setItem('csf-lab-state',JSON.stringify(st));
+}
+
+function load(){
+  try{
+    const raw=localStorage.getItem('csf-lab-state');
+    if(!raw)return;
+    const st=JSON.parse(raw);
+    ['f1','f2','f3','f4','f5'].forEach(k=>{
+      if(st.score&&st.score[k]!=null)score[k]=st.score[k];
+      if(st.done&&st.done[k])st.done[k].forEach(v=>done[k].add(v));
+    });
+  }catch(e){}
+}
+
+function updateHUD(){
+  const t=total();
+  document.getElementById('hud-score').textContent=t;
+  ['f1','f2','f3','f4','f5'].forEach((k,i)=>{
+    const ph=i+1;
+    document.getElementById('pts'+ph).textContent=score[k]+' / '+PMAX[k]+' pts';
+    const dot=document.getElementById('dot'+ph);
+    const lbl=document.getElementById('lbl'+ph);
+    if(score[k]>=PMAX[k]){dot.className='step-dot done';lbl.className='step-lbl done';}
+    else if(score[k]>0||done[k].size>0){dot.className='step-dot active';lbl.className='step-lbl active';}
+  });
+}
+
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+function award(ph,key,pts,msg){
+  if(done[ph].has(key))return;
+  done[ph].add(key);
+  score[ph]+=pts;
+  save();updateHUD();
+  toast(msg+' +'+pts+' pts');
+  checkUnlocks();
+}
+
+// ── GATE ─────────────────────────────────────────
+function checkGate(){
+  const v=document.getElementById('gate-input').value.trim().toUpperCase();
+  if(v==='BTA-CSF-2026'){
+    localStorage.setItem('bta-csf-access','1');
+    openLab();
+  } else {
+    document.getElementById('gate-err').textContent='Código inválido. Verifique com seu instrutor.';
+  }
+}
+document.getElementById('gate-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkGate();});
+
+function openLab(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('lab').style.display='block';
+  load();updateHUD();
+  buildPhase1();
+  checkUnlocks();
+}
+
+if(localStorage.getItem('bta-csf-access')==='1') openLab();
+
+// ── UNLOCK CHAIN ─────────────────────────────────
+function checkUnlocks(){
+  if(score.f1>=100 && document.getElementById('phase2-locked'))buildPhase2();
+  if(done.f2.size>=3 && document.getElementById('phase3-locked'))buildPhase3();
+  if(done.f3.size>=5 && document.getElementById('phase4-locked'))buildPhase4();
+  if(done.f4.has('f4-confirmed') && document.getElementById('phase5-locked'))buildPhase5();
+  if(total()>=400 && document.getElementById('closing-card').style.display==='none')buildClosing();
+}
+
+// ── PHASE 1 — CIA TRIAD ──────────────────────────
+const SCENARIOS=[
+  {id:'s1',title:'Servidores fora do ar',body:'Um ataque DDoS sobrecarregou os servidores do banco durante o horário de pico. Clientes ficaram sem acesso ao app por 4 horas.',opts:['Confidencialidade','Integridade','Disponibilidade','Todos os três'],ans:'Disponibilidade'},
+  {id:'s2',title:'Dados expostos na dark web',body:'Uma lista com CPF, endereço e email de 2 milhões de clientes foi encontrada em fórum clandestino após invasão ao banco de dados.',opts:['Confidencialidade','Integridade','Disponibilidade','Todos os três'],ans:'Confidencialidade'},
+  {id:'s3',title:'Registros adulterados',body:'Funcionário mal-intencionado alterou notas fiscais no sistema ERP para desviar R$ 300k ao longo de 6 meses sem ser detectado.',opts:['Confidencialidade','Integridade','Disponibilidade','Todos os três'],ans:'Integridade'},
+  {id:'s4',title:'Ransomware na clínica',body:'Malware criptografou todos os prontuários médicos. Médicos ficaram sem acesso ao histórico dos pacientes durante emergências.',opts:['Confidencialidade','Integridade','Disponibilidade','Todos os três'],ans:'Disponibilidade'},
+];
+
+function buildPhase1(){
+  const grid=document.getElementById('sc-grid');
+  grid.innerHTML='';
+  SCENARIOS.forEach(sc=>{
+    const card=document.createElement('div');
+    card.className='sc-card';
+    const alreadyDone=done.f1.has(sc.id);
+    card.innerHTML=`<h4>${sc.title}</h4><p>${sc.body}</p><div class="sc-opts" id="opts-${sc.id}"></div>${alreadyDone?'<span class="sc-badge">✔ +25 pts</span>':''}`;
+    grid.appendChild(card);
+    const optsDiv=card.querySelector('.sc-opts');
+    sc.opts.forEach(opt=>{
+      const btn=document.createElement('button');
+      btn.className='sc-opt';
+      btn.textContent=opt;
+      if(alreadyDone){
+        btn.disabled=true;
+        if(opt===sc.ans)btn.classList.add('correct');
+      }
+      btn.addEventListener('click',()=>{
+        if(btn.disabled)return;
+        optsDiv.querySelectorAll('.sc-opt').forEach(b=>{b.disabled=true;});
+        if(opt===sc.ans){
+          btn.classList.add('correct');
+          optsDiv.insertAdjacentHTML('afterend','<span class="sc-badge">✔ +25 pts</span>');
+          award('f1',sc.id,25,'Correto!');
+        } else {
+          btn.classList.add('wrong');
+          const correct=optsDiv.querySelector(`button:disabled`);
+          optsDiv.querySelectorAll('.sc-opt').forEach(b=>{if(b.textContent===sc.ans)b.classList.add('correct');});
+        }
+      });
+      optsDiv.appendChild(btn);
+    });
+  });
+  document.getElementById('dot1').className='step-dot active';
+  document.getElementById('lbl1').className='step-lbl active';
+}
+
+// ── PHASE 2 — TRAFFIC ────────────────────────────
+const TRAFFIC=[
+  {time:'08:14:02',src:'192.168.1.42',dst:'10.0.0.5',port:'443',proto:'HTTPS',bytes:'2.1 KB',cls:'ok',flag:null},
+  {time:'08:14:11',src:'192.168.1.88',dst:'10.0.0.5',port:'80',proto:'HTTP',bytes:'540 B',cls:'ok',flag:null},
+  {time:'08:14:23',src:'203.0.113.77',dst:'192.168.1.10',port:'3389',proto:'RDP',bytes:'18.4 KB',cls:'bad',flag:'rdp',label:'RDP Externo',pts:34,msg:'RDP exposto à internet detectado'},
+  {time:'08:14:39',src:'192.168.1.55',dst:'10.0.0.5',port:'443',proto:'HTTPS',bytes:'1.8 KB',cls:'ok',flag:null},
+  {time:'08:15:01',src:'192.168.1.22',dst:'10.0.0.5',port:'8080',proto:'HTTP',bytes:'3.2 KB',cls:'ok',flag:null},
+  {time:'08:15:14',src:'192.168.1.99',dst:'45.33.32.156',port:'4444',proto:'TCP',bytes:'512 B',cls:'bad',flag:'c2port',label:'Porta Suspeita 4444',pts:33,msg:'Porta 4444 — possível shell reverso'},
+  {time:'08:15:28',src:'10.0.0.5',dst:'192.168.1.42',port:'443',proto:'HTTPS',bytes:'900 B',cls:'ok',flag:null},
+  {time:'08:15:41',src:'192.168.1.33',dst:'10.0.0.5',port:'22',proto:'SSH',bytes:'1.1 KB',cls:'ok',flag:null},
+  {time:'08:15:55',src:'192.168.1.77',dst:'198.51.100.23',port:'80',proto:'HTTP',bytes:'256 B',cls:'bad',flag:'beacon',label:'Beacon C2',pts:33,msg:'Requisição periódica a IP externo suspeito'},
+  {time:'08:16:02',src:'192.168.1.11',dst:'10.0.0.5',port:'443',proto:'HTTPS',bytes:'4.5 KB',cls:'ok',flag:null},
+];
+
+function buildPhase2(){
+  const body=document.getElementById('phase2-body');
+  const found=done.f2.size;
+  body.innerHTML=`
+    <div class="fase-desc">Analise os logs de rede abaixo. Clique nas linhas suspeitas para registrar a ameaça.</div>
+    <div class="traf-note">Dica: procure protocolos inesperados, portas incomuns e conexões a IPs externos.</div>
+    <table class="traffic-tbl">
+      <thead><tr><th>Hora</th><th>Origem</th><th>Destino</th><th>Porta</th><th>Proto</th><th>Volume</th></tr></thead>
+      <tbody id="traf-body"></tbody>
+    </table>
+    <div id="f2-count" style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan)">Ameaças encontradas: ${found}/3</div>
+  `;
+  const tbody=document.getElementById('traf-body');
+  TRAFFIC.forEach(row=>{
+    const tr=document.createElement('tr');
+    const clsMap={ok:'t-ok',bad:'t-bad',sus:'t-sus'};
+    tr.innerHTML=`<td class="${clsMap[row.cls]||''}" style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.time}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.src}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.dst}</td><td class="${clsMap[row.cls]||''}">${row.port}</td><td>${row.proto}</td><td style="font-size:12px">${row.bytes}</td>`;
+    if(row.flag){
+      tr.classList.add('clickable');
+      if(done.f2.has(row.flag)){tr.classList.add('found');tr.title=row.label;}
+      tr.addEventListener('click',()=>{
+        if(done.f2.has(row.flag))return;
+        tr.classList.add('found');
+        award('f2',row.flag,row.pts,row.msg);
+        document.getElementById('f2-count').textContent='Ameaças encontradas: '+done.f2.size+'/3';
+      });
+    }
+    tbody.appendChild(tr);
+  });
+  document.getElementById('dot2').className='step-dot active';
+  document.getElementById('lbl2').className='step-lbl active';
+}
+
+// ── PHASE 3 — PHISHING ───────────────────────────
+function buildPhase3(){
+  const body=document.getElementById('phase3-body');
+  body.innerHTML=`
+    <div class="fase-desc">Analise o email abaixo. Clique em cada elemento suspeito para identificar os indicadores de phishing.</div>
+    <div class="phi-hint">5 indicadores para encontrar — passe o mouse para destacar elementos clicáveis.</div>
+    <div class="email-wrap">
+      <div class="email-field"><span class="lbl">De:</span><span>atendimento@itau-seguro.<span class="phi${done.f3.has('domain')?' found':''}" id="phi-domain" data-key="domain" data-pts="20" data-msg="Domínio falso detectado">attackers.net</span></span></div>
+      <div class="email-field"><span class="lbl">Para:</span><span>cliente@empresa.com.br</span></div>
+      <div class="email-field"><span class="lbl">Assunto:</span><span class="phi${done.f3.has('urgente')?' found':''}" id="phi-urgente" data-key="urgente" data-pts="20" data-msg="Gatilho de urgência identificado">⚠️ <span class="phi${done.f3.has('urgente')?' found':''}">URGENTE</span>: Sua conta será bloqueada em 24 horas</span></div>
+      <div class="email-body">
+        <p>Prezado cliente,</p><br>
+        <p>Identificamos atividade suspeita em sua conta. Para evitar o bloqueio imediato, acesse agora:</p><br>
+        <p><a class="phi${done.f3.has('url')?' found':''}" id="phi-url" data-key="url" data-pts="20" data-msg="URL de phishing identificada" style="color:var(--yellow);text-decoration:none">https://<span>verificacao-conta.net</span>/itau/seguranca</a></p><br>
+        <p>Você tem <span class="phi${done.f3.has('prazo')?' found':''}" id="phi-prazo" data-key="prazo" data-pts="20" data-msg="Prazo artificial para pressionar a vítima">24 horas</span> para regularizar sua situação.</p><br>
+        <p>Atenciosamente,<br>Banco Itaú S.A.<br>CNPJ: <span class="phi${done.f3.has('cnpj')?' found':''}" id="phi-cnpj" data-key="cnpj" data-pts="20" data-msg="CNPJ real usado para dar credibilidade ao golpe">60.872.504/0001-23</span></p>
+      </div>
+    </div>
+    <div id="phi-count" style="margin-top:14px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan)">Indicadores encontrados: ${done.f3.size}/5</div>
+  `;
+  document.querySelectorAll('.phi[data-key]').forEach(el=>{
+    if(done.f3.has(el.dataset.key))return;
+    el.addEventListener('click',()=>{
+      if(done.f3.has(el.dataset.key))return;
+      el.classList.add('found');
+      award('f3',el.dataset.key,parseInt(el.dataset.pts),el.dataset.msg);
+      document.getElementById('phi-count').textContent='Indicadores encontrados: '+done.f3.size+'/5';
+    });
+  });
+  document.getElementById('dot3').className='step-dot active';
+  document.getElementById('lbl3').className='step-lbl active';
+}
+
+// ── PHASE 4 — DEFENSE BUILDER ────────────────────
+const TOOLS=[
+  {id:'ngfw',icon:'🛡️',name:'NGFW',desc:'Next-Gen Firewall',essential:true},
+  {id:'waf',icon:'🌐',name:'WAF',desc:'Web App Firewall',essential:true},
+  {id:'edr',icon:'💻',name:'EDR',desc:'Endpoint Detection & Response',essential:true},
+  {id:'av',icon:'🦠',name:'Antivírus',desc:'Proteção básica de endpoint',essential:false},
+  {id:'mfa',icon:'🔑',name:'MFA',desc:'Autenticação multifator',essential:true},
+  {id:'ids',icon:'📡',name:'IDS/IPS',desc:'Detecção/Prevenção de Intrusão',essential:true},
+  {id:'vpn',icon:'🔒',name:'VPN',desc:'Rede privada virtual',essential:true},
+  {id:'telnet',icon:'⚠️',name:'Telnet',desc:'Protocolo legado sem criptografia',essential:false,error:true},
+];
+const ESSENTIAL_IDS=['ngfw','waf','edr','mfa','ids','vpn'];
+
+function buildPhase4(){
+  const body=document.getElementById('phase4-body');
+  body.innerHTML=`
+    <div class="fase-desc">Você precisa montar a pilha de segurança da empresa. Selecione as ferramentas essenciais e clique em "Confirmar Defesa".</div>
+    <div class="info-box"><strong>Cenário:</strong> PME com 80 funcionários, e-commerce próprio, equipe de TI de 2 pessoas. Budget: médio.</div>
+    <div class="tool-grid" id="tool-grid"></div>
+    <button class="def-btn" id="def-confirm-btn" onclick="confirmDefense()">Confirmar Defesa</button>
+    <div class="def-result" id="def-result"></div>
+  `;
+  const grid=document.getElementById('tool-grid');
+  TOOLS.forEach(t=>{
+    const card=document.createElement('div');
+    card.className='tool-card'+(done.f4.has('f4-confirmed')?' locked-tool':'');
+    card.id='tc-'+t.id;
+    if(done.f4.has('f4-sel-'+t.id))card.classList.add('selected');
+    card.innerHTML=`<div class="tool-icon">${t.icon}</div><div class="tool-name">${t.name}</div><div class="tool-desc">${t.desc}</div>`;
+    if(!done.f4.has('f4-confirmed')){
+      card.addEventListener('click',()=>{
+        if(t.error){
+          card.classList.add('tool-error');
+          toast('⚠️ Telnet é inseguro — transmite dados em texto puro!');
+          setTimeout(()=>card.classList.remove('tool-error'),400);
+          return;
+        }
+        card.classList.toggle('selected');
+      });
+    }
+    grid.appendChild(card);
+  });
+  if(done.f4.has('f4-confirmed')){
+    document.getElementById('def-confirm-btn').disabled=true;
+    showDefResult();
+  }
+  document.getElementById('dot4').className='step-dot active';
+  document.getElementById('lbl4').className='step-lbl active';
+}
+
+function confirmDefense(){
+  const selected=[...document.querySelectorAll('.tool-card.selected')].map(c=>c.id.replace('tc-',''));
+  if(selected.includes('telnet')){
+    toast('⚠️ Remova o Telnet antes de confirmar!');return;
+  }
+  if(selected.length<3){
+    toast('Selecione pelo menos 3 ferramentas!');return;
+  }
+  const essentialSelected=ESSENTIAL_IDS.filter(id=>selected.includes(id));
+  const pts=essentialSelected.length*15;
+  const bonus=essentialSelected.length===6?10:0;
+  ESSENTIAL_IDS.forEach(id=>{
+    if(selected.includes(id))done.f4.add('f4-sel-'+id);
+  });
+  award('f4','f4-confirmed',pts+bonus,'Stack de defesa confirmada');
+  document.getElementById('def-confirm-btn').disabled=true;
+  document.querySelectorAll('.tool-card').forEach(c=>c.classList.add('locked-tool'));
+  showDefResult(essentialSelected,bonus);
+}
+
+function showDefResult(ess,bonus){
+  const r=document.getElementById('def-result');
+  r.style.display='block';
+  if(!ess){
+    // restore mode
+    const selIds=ESSENTIAL_IDS.filter(id=>done.f4.has('f4-sel-'+id));
+    r.className='def-result show ok';
+    r.innerHTML=`<strong>Stack validada!</strong> Ferramentas essenciais selecionadas: ${selIds.map(id=>TOOLS.find(t=>t.id===id).name).join(', ')}.`;
+    return;
+  }
+  r.className='def-result show ok';
+  r.innerHTML=`<strong>Defesa confirmada!</strong><br>${ess.length}/6 ferramentas essenciais (${ess.map(id=>TOOLS.find(t=>t.id===id).name).join(', ')})${bonus?'<br><span style="color:var(--cyan)">+10 pts bônus: stack completa!</span>':''}`;
+}
+
+// ── PHASE 5 — LGPD ───────────────────────────────
+function buildPhase5(){
+  const body=document.getElementById('phase5-body');
+  body.innerHTML=`
+    <div class="fase-desc">Um incidente de segurança afetou dados pessoais. Use a calculadora para determinar as obrigações legais da empresa sob a LGPD.</div>
+    <div class="lgpd-form" id="lgpd-form">
+      <div class="lgpd-row">
+        <label>Número de titulares afetados: <span class="lgpd-range-val" id="range-val">10.000</span></label>
+        <input type="range" id="range-titulares" min="100" max="100000" step="100" value="10000" oninput="document.getElementById('range-val').textContent=parseInt(this.value).toLocaleString('pt-BR')">
+      </div>
+      <div class="lgpd-row">
+        <label>Categoria dos dados comprometidos:</label>
+        <select id="sel-dados">
+          <option value="">Selecione...</option>
+          <option value="publicos">Dados públicos (nome, empresa)</option>
+          <option value="pessoais">Dados pessoais (CPF, email, endereço)</option>
+          <option value="sensiveis">Dados sensíveis (saúde, biometria, financeiro)</option>
+        </select>
+      </div>
+      <div class="lgpd-row">
+        <label>A empresa possui Política de Privacidade documentada?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="politica" value="sim"> Sim, documentada e revisada</label>
+          <label><input type="radio" name="politica" value="parcial"> Parcialmente documentada</label>
+          <label><input type="radio" name="politica" value="nao"> Não possui</label>
+        </div>
+      </div>
+      <div class="lgpd-row">
+        <label>A empresa notificou a ANPD em 72 horas?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="notif" value="sim"> Sim, dentro do prazo</label>
+          <label><input type="radio" name="notif" value="atraso"> Não, notificou com atraso</label>
+          <label><input type="radio" name="notif" value="nao"> Não notificou</label>
+        </div>
+      </div>
+      <button class="calc-btn" id="calc-btn" onclick="calcLGPD()" ${done.f5.has('f5-calc')?'disabled':''}>Calcular Risco</button>
+      <div class="lgpd-result" id="lgpd-result" ${done.f5.has('f5-calc')?'':'style="display:none"'}></div>
+      <div class="lgpd-quiz" id="lgpd-quiz" style="display:${done.f5.has('f5-calc')?'block':'none'}"></div>
+    </div>
+  `;
+  document.getElementById('dot5').className='step-dot active';
+  document.getElementById('lbl5').className='step-lbl active';
+  if(done.f5.has('f5-calc')){showLGPDResult(true);showLGPDQuiz();}
+}
+
+function calcLGPD(){
+  const titulares=parseInt(document.getElementById('range-titulares').value);
+  const dados=document.getElementById('sel-dados').value;
+  const politica=document.querySelector('input[name="politica"]:checked')?.value;
+  const notif=document.querySelector('input[name="notif"]:checked')?.value;
+  if(!dados||!politica||!notif){toast('Preencha todos os campos!');return;}
+  document.getElementById('calc-btn').disabled=true;
+  award('f5','f5-calc',60,'Análise LGPD calculada');
+  showLGPDResult(false,{titulares,dados,politica,notif});
+  setTimeout(()=>{document.getElementById('lgpd-quiz').style.display='block';showLGPDQuiz();},600);
+}
+
+function showLGPDResult(restore,d){
+  const r=document.getElementById('lgpd-result');
+  r.className='lgpd-result show';
+  r.style.display='block';
+  const nivelMap={publicos:'Baixo',pessoais:'Médio',sensiveis:'Alto'};
+  const multa=restore?'até R$ 50 milhões':(d.dados==='sensiveis'?'até R$ 50 milhões':(d.dados==='pessoais'?'até R$ 10 milhões':'notificação e advertência'));
+  r.innerHTML=`
+    <h4>Resultado da Análise LGPD</h4>
+    <div class="lgpd-stat">⚖️ Art. 48 LGPD: comunicação obrigatória à ANPD em até 72 horas</div>
+    <div class="lgpd-stat">📋 Art. 52: sanções administrativas aplicáveis</div>
+    <p style="margin-top:10px">Com dados pessoais ou sensíveis afetados, a empresa tem obrigação de notificar a ANPD e os titulares afetados. A multa pode chegar a <strong style="color:var(--red)">${multa}</strong> por violação.</p>
+    <p style="margin-top:8px">Atraso ou omissão na notificação agrava a penalidade significativamente.</p>
+  `;
+}
+
+const LGPD_QUIZ=[
+  {id:'q1',q:'Qual é o prazo máximo para notificar a ANPD após um incidente com dados pessoais?',opts:['7 dias corridos','24 horas','72 horas','30 dias'],ans:'72 horas',pts:20},
+  {id:'q2',q:'Dados de saúde, biometria e origem racial são classificados pela LGPD como:',opts:['Dados públicos','Dados pessoais comuns','Dados sensíveis','Dados anonimizados'],ans:'Dados sensíveis',pts:20},
+];
+
+function showLGPDQuiz(){
+  const div=document.getElementById('lgpd-quiz');
+  div.innerHTML='<h4>Quiz Rápido LGPD</h4>';
+  LGPD_QUIZ.forEach(q=>{
+    const done_q=done.f5.has(q.id);
+    const qDiv=document.createElement('div');
+    qDiv.className='quiz-q';
+    qDiv.innerHTML=`<p>${q.q}</p>`;
+    q.opts.forEach(opt=>{
+      const btn=document.createElement('button');
+      btn.className='quiz-opt';
+      btn.textContent=opt;
+      if(done_q){
+        btn.disabled=true;
+        if(opt===q.ans)btn.classList.add('correct');
+      }
+      btn.addEventListener('click',()=>{
+        if(btn.disabled)return;
+        qDiv.querySelectorAll('.quiz-opt').forEach(b=>{b.disabled=true;});
+        if(opt===q.ans){
+          btn.classList.add('correct');
+          award('f5',q.id,q.pts,'Resposta correta!');
+        } else {
+          btn.classList.add('wrong');
+          qDiv.querySelectorAll('.quiz-opt').forEach(b=>{if(b.textContent===q.ans)b.classList.add('correct');});
+        }
+      });
+      qDiv.appendChild(btn);
+    });
+    div.appendChild(qDiv);
+  });
+}
+
+// ── CLOSING ───────────────────────────────────────
+const BTO_LABS=[
+  {n:'Módulo 1',t:'Linux para Blue Team',tag:'Fundamentos'},
+  {n:'Módulo 2',t:'Análise de Tráfego',tag:'Network'},
+  {n:'Módulo 3',t:'Threat Intelligence',tag:'CTI'},
+  {n:'Módulo 4',t:'SIEM & Detecção',tag:'Monitoring'},
+  {n:'Módulo 5',t:'Malware Analysis',tag:'RE'},
+  {n:'Módulo 6',t:'Cloud Security',tag:'AWS/Azure'},
+  {n:'Módulo 7',t:'Contenção & IR',tag:'Incident Response'},
+  {n:'Módulo 8',t:'Forense Digital',tag:'DFIR'},
+  {n:'Módulo 9',t:'Simulação APT',tag:'Red vs Blue'},
+];
+
+function buildClosing(){
+  const card=document.getElementById('closing-card');
+  card.style.display='block';
+  card.querySelector('#closing-locked').remove();
+  const t=total();
+  let tier='';
+  if(t>=480)tier='Resultado excepcional — você pensa como um analista SOC Nível 2.';
+  else if(t>=400)tier='Ótimo desempenho — você está pronto para o Blue Team Operations.';
+  else tier='Bom início — o BTO vai aprofundar cada um desses tópicos.';
+
+  const btoGrid=BTO_LABS.map(l=>`<div class="bto-card"><div class="bc-num">${l.n}</div><div class="bc-title">${l.t}</div><div class="bc-tag">${l.tag}</div></div>`).join('');
+
+  card.innerHTML=`
+    <div class="closing">
+      <div class="closing-score">${t} <span style="font-size:24px;color:var(--text2)">/ 500</span></div>
+      <div class="closing-sub">${tier}</div>
+      <div class="bto-title">Pronto para o próximo nível?</div>
+      <div class="bto-desc">O Blue Team Operations (BTO) aprofunda cada um desses tópicos em 9 módulos práticos com labs reais.</div>
+      <div class="bto-grid">${btoGrid}</div>
+      <a class="cta-btn" href="https://blueteam.army/courses" target="_blank">QUERO O BTO COMPLETO →</a>
+      <a class="back-link" href="#">← Voltar ao Curso Cyber Fundamentals</a>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
