@@ -1,0 +1,22 @@
+{
+  "capture": "linux01-eth0-2024-11-08.pcap",
+  "interface": "eth0",
+  "host": "linux01.corp.local (192.168.10.7)",
+  "packets": [
+    {"num":1,"time":"02:00:01","src":"10.20.45.113","dst":"192.168.10.0/24","proto":"ICMP","len":64,"info":"Echo Request — host sweep (128 hosts)","level":"suspicious","discovery":"f4-scan"},
+    {"num":2,"time":"02:00:08","src":"10.20.45.113","dst":"192.168.10.7","proto":"TCP","len":60,"info":"SYN → 22 [SSH]","level":"suspicious","discovery":"f4-scan"},
+    {"num":3,"time":"02:00:09","src":"10.20.45.113","dst":"192.168.10.7","proto":"TCP","len":60,"info":"SYN → 80 [HTTP]","level":"suspicious"},
+    {"num":4,"time":"02:00:10","src":"10.20.45.113","dst":"192.168.10.7","proto":"TCP","len":60,"info":"SYN → 443 [HTTPS]","level":"suspicious"},
+    {"num":5,"time":"02:09:01","src":"10.20.45.113","dst":"192.168.10.7","proto":"TCP","len":248,"info":"SSH — autenticação (falha 1)","level":"warning"},
+    {"num":6,"time":"02:17:31","src":"10.20.45.113","dst":"192.168.10.7","proto":"TCP","len":248,"info":"SSH — autenticação bem-sucedida","level":"critical"},
+    {"num":7,"time":"02:19:02","src":"192.168.10.7","dst":"8.8.8.8","proto":"DNS","len":71,"info":"Query A: update-cdn185.net","level":"critical","discovery":"f4-dominio-c2"},
+    {"num":8,"time":"02:19:02","src":"8.8.8.8","dst":"192.168.10.7","proto":"DNS","len":87,"info":"Response: update-cdn185.net → 185.220.101.45","level":"critical"},
+    {"num":9,"time":"02:19:04","src":"192.168.10.7","dst":"185.220.101.45","proto":"HTTP","len":412,"info":"GET /setup.exe HTTP/1.1 Host: update-cdn185.net","level":"critical","discovery":"f4-payload"},
+    {"num":10,"time":"02:19:05","src":"185.220.101.45","dst":"192.168.10.7","proto":"TCP","len":9566,"info":"HTTP/1.1 200 OK — binary payload [46KB, seg 1/6]","level":"critical"},
+    {"num":11,"time":"02:19:07","src":"192.168.10.7","dst":"185.220.101.45","proto":"HTTP","len":314,"info":"POST /gate.php — beacon #1 (host_id, os, user)","level":"critical","discovery":"f4-beacon"},
+    {"num":12,"time":"02:19:08","src":"185.220.101.45","dst":"192.168.10.7","proto":"HTTP","len":128,"info":"HTTP/1.1 200 OK — C2 command response","level":"critical"},
+    {"num":13,"time":"02:24:07","src":"192.168.10.7","dst":"185.220.101.45","proto":"HTTP","len":314,"info":"POST /gate.php — beacon #2 (+300s)","level":"critical","discovery":"f4-beacon"},
+    {"num":14,"time":"02:29:07","src":"192.168.10.7","dst":"185.220.101.45","proto":"HTTP","len":314,"info":"POST /gate.php — beacon #3 (+300s)","level":"critical"},
+    {"num":15,"time":"02:33:09","src":"192.168.10.7","dst":"54.214.101.22","proto":"HTTPS","len":512,"info":"TLS 1.3 — AWS API (sts.amazonaws.com)","level":"warning"}
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "host": "DC01.corp.local",
+  "os": "Windows Server 2022",
+  "period": "2024-11-08T00:00:00Z / 2024-11-08T09:30:00Z",
+  "events": [
+    {"id":"e01","time":"09:15:00","eid":4624,"level":"normal","src":"192.168.1.75","user":"jsilva","workstation":"WS-JSILVA","desc":"Login de rede bem-sucedido"},
+    {"id":"e02","time":"09:00:00","eid":4624,"level":"normal","src":"192.168.1.100","user":"admin","workstation":"MGMT-PC01","desc":"Login de console bem-sucedido"},
+    {"id":"e03","time":"08:30:00","eid":4624,"level":"normal","src":"192.168.1.50","user":"deployer","workstation":"BUILD-SRV","desc":"Login de serviço automatizado"},
+    {"id":"e04","time":"08:00:01","eid":4624,"level":"normal","src":"192.168.1.100","user":"admin","workstation":"MGMT-PC01","desc":"Login matutino normal"},
+    {"id":"e05","time":"02:21:02","eid":4698,"level":"critical","src":"10.20.45.113","user":"Administrator","workstation":"LINUX01","desc":"Tarefa agendada criada: SvcUpdateTask — cmd /c powershell -ep bypass -nop -c ..."},
+    {"id":"e06","time":"02:20:15","eid":4732,"level":"critical","src":"10.20.45.113","user":"Administrator","workstation":"LINUX01","desc":"Membro adicionado ao grupo Administrators: svc_update"},
+    {"id":"e07","time":"02:19:47","eid":4720,"level":"critical","src":"10.20.45.113","user":"Administrator","workstation":"LINUX01","desc":"Nova conta criada: svc_update (fora do horário comercial)"},
+    {"id":"e08","time":"02:17:31","eid":4624,"level":"critical","src":"10.20.45.113","user":"Administrator","workstation":"LINUX01","desc":"Login bem-sucedido de IP externo após 8 falhas consecutivas"},
+    {"id":"e09","time":"02:10:35","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 8)"},
+    {"id":"e10","time":"02:10:22","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 7)"},
+    {"id":"e11","time":"02:10:08","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 6)"},
+    {"id":"e12","time":"02:09:55","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 5)"},
+    {"id":"e13","time":"02:09:41","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 4)"},
+    {"id":"e14","time":"02:09:28","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 3)"},
+    {"id":"e15","time":"02:09:14","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 2)"},
+    {"id":"e16","time":"02:09:01","eid":4625,"level":"warning","src":"10.20.45.113","user":"Administrator","workstation":"","desc":"Falha de autenticação — senha incorreta (tentativa 1)"}
+  ]
+}
