@@ -94,9 +94,9 @@ main{max-width:900px;margin:0 auto;padding:28px 20px 80px}
 .email-field{margin-bottom:10px;display:flex;gap:8px;font-size:13px}
 .email-field .lbl{color:var(--text2);min-width:50px}
 .email-body{margin-top:14px;font-size:14px;line-height:1.8;color:#c8d8f0}
-.phi{cursor:pointer;border-bottom:2px dashed var(--yellow);transition:.2s;padding:0 2px}
-.phi:hover{background:rgba(254,188,46,.1)}
-.phi.found{border-bottom-color:var(--green);color:var(--green);cursor:default}
+.phi{cursor:pointer;transition:.2s;padding:0 2px;border-radius:2px}
+.phi:hover{background:rgba(255,255,255,.06)}
+.phi.found{border-bottom:2px solid var(--green);color:var(--green);cursor:default}
 .phi-hint{font-size:12px;color:var(--text2);margin-bottom:12px}
 .phi-count{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan);margin-top:12px}
 
@@ -458,8 +458,7 @@ function buildPhase2(){
   const tbody=document.getElementById('traf-body');
   TRAFFIC.forEach(row=>{
     const tr=document.createElement('tr');
-    const clsMap={ok:'t-ok',bad:'t-bad',sus:'t-sus'};
-    tr.innerHTML=`<td class="${clsMap[row.cls]||''}" style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.time}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.src}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.dst}</td><td class="${clsMap[row.cls]||''}">${row.port}</td><td>${row.proto}</td><td style="font-size:12px">${row.bytes}</td>`;
+    tr.innerHTML=`<td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.time}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.src}</td><td style="font-family:'Share Tech Mono',monospace;font-size:12px">${row.dst}</td><td>${row.port}</td><td>${row.proto}</td><td style="font-size:12px">${row.bytes}</td>`;
     if(row.flag){
       tr.classList.add('clickable');
       if(done.f2.has(row.flag)){tr.classList.add('found');tr.title=row.label;}
@@ -654,13 +653,11 @@ function showLGPDResult(restore,d){
   const r=document.getElementById('lgpd-result');
   r.className='lgpd-result show';
   r.style.display='block';
-  const nivelMap={publicos:'Baixo',pessoais:'Médio',sensiveis:'Alto'};
-  const multa=restore?'até R$ 50 milhões':(d.dados==='sensiveis'?'até R$ 50 milhões':(d.dados==='pessoais'?'até R$ 10 milhões':'notificação e advertência'));
   r.innerHTML=`
     <h4>Resultado da Análise LGPD</h4>
     <div class="lgpd-stat">⚖️ Art. 48 LGPD: comunicação obrigatória à ANPD em até 72 horas</div>
-    <div class="lgpd-stat">📋 Art. 52: sanções administrativas aplicáveis</div>
-    <p style="margin-top:10px">Com dados pessoais ou sensíveis afetados, a empresa tem obrigação de notificar a ANPD e os titulares afetados. A multa pode chegar a <strong style="color:var(--red)">${multa}</strong> por violação.</p>
+    <div class="lgpd-stat">📋 Art. 52: multa de até 2% do faturamento anual, limitada a R$ 50 milhões por infração</div>
+    <p style="margin-top:10px">Com dados pessoais ou sensíveis afetados, a empresa tem obrigação de notificar a ANPD e os titulares afetados. A sanção pode atingir <strong style="color:var(--red)">2% do faturamento anual no Brasil, limitada a R$ 50 milhões por infração</strong> (Art. 52, §1°, II).</p>
     <p style="margin-top:8px">Atraso ou omissão na notificação agrava a penalidade significativamente.</p>
   `;
 }
